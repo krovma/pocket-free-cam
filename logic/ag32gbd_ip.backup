@@ -1,0 +1,631 @@
+`default_nettype none
+`timescale 1ns/1ps
+module ag32gbd_ip (
+  //////////////////// MAC-GBD
+  input                 cart_CLK,
+  input       [15:0]    cart_a,
+  inout       [7:0]     cart_d,
+  input                 cart_nCS,
+  input                 cart_nRD,
+  output tri0           cart_nRST,
+  input                 cart_nWR,
+
+  output tri0        dbgout4,
+  output tri0        dbgout6,
+  output tri0        dbgout8,
+
+  output tri0 [16:13]   ram_a,
+  output tri0           ram_ce2,
+  output tri0           ram_nCS,
+  output tri0           ram_nWE,
+  output tri0 [22:14]   rom_a,
+  output tri0           rom_nCS,
+  output tri0           sens_load,
+  output tri0           sens_read,
+  output tri0           sens_reset,
+  output tri0           sens_sin,
+  output tri0           sens_start,
+  output tri0           sens_xck,
+  /////////////////// AG32 Clock and AHB
+  input              pll_clk4_out_data,
+  input              pll_clk4_out_en,
+  input              sys_clock,
+  input              bus_clock,
+  input              resetn,
+  input              stop,
+  input       [1:0]  mem_ahb_htrans,
+  input              mem_ahb_hready,
+  input              mem_ahb_hwrite,
+  input       [31:0] mem_ahb_haddr,
+  input       [2:0]  mem_ahb_hsize,
+  input       [2:0]  mem_ahb_hburst,
+  input       [31:0] mem_ahb_hwdata,
+  output tri1        mem_ahb_hreadyout,
+  output tri0        mem_ahb_hresp,
+  output tri0 [31:0] mem_ahb_hrdata,
+  output tri0        slave_ahb_hsel,
+  output tri1        slave_ahb_hready,
+  input              slave_ahb_hreadyout,
+  output tri0 [1:0]  slave_ahb_htrans,
+  output tri0 [2:0]  slave_ahb_hsize,
+  output tri0 [2:0]  slave_ahb_hburst,
+  output tri0        slave_ahb_hwrite,
+  output tri0 [31:0] slave_ahb_haddr,
+  output tri0 [31:0] slave_ahb_hwdata,
+  input              slave_ahb_hresp,
+  input       [31:0] slave_ahb_hrdata,
+  output tri0 [3:0]  ext_dma_DMACBREQ,
+  output tri0 [3:0]  ext_dma_DMACLBREQ,
+  output tri0 [3:0]  ext_dma_DMACSREQ,
+  output tri0 [3:0]  ext_dma_DMACLSREQ,
+  input       [3:0]  ext_dma_DMACCLR,
+  input       [3:0]  ext_dma_DMACTC,
+  output tri0 [3:0]  local_int
+
+  /////////////////////////
+  //debug
+  // ,output OUT_cam_reg_selected
+  // ,output OUT_is_ram_addr
+  // ,output OUT_is_capturing
+  //,output [7:0] OUT_data_output_r
+  // ,output [4:0] OUT_ram_bank_id
+  // ,output OUT_cam_reg_write_clk
+  // ,output [2:0] OUT_a000
+  // ,output [31:0] OUT_xck_count
+  // , output [7:0] debug_ROM_BANK
+  // , output [7:0] debug_RAM_BANK
+  // , output [7:0] debug_bram_output_a
+  // , output [7:0] debug_bram_output_b
+);
+
+
+// BEGIN Instantiate ADC
+analog_ip analog_ip_inst(
+  .stop                       (stop),
+  .sys_clock                  (sys_clock),
+  .bus_clock                  (bus_clock),
+  .resetn                     (resetn),
+  .mem_ahb_htrans             (mem_ahb_htrans),
+  .mem_ahb_hready             (mem_ahb_hready),
+  .mem_ahb_hwrite             (mem_ahb_hwrite),
+  .mem_ahb_haddr              (mem_ahb_haddr),
+  .mem_ahb_hsize              (mem_ahb_hsize),
+  .mem_ahb_hburst             (mem_ahb_hburst[2:0]),
+  .mem_ahb_hwdata             (mem_ahb_hwdata[31:0]),
+  .mem_ahb_hreadyout          (mem_ahb_hreadyout),
+  .mem_ahb_hresp              (mem_ahb_hresp),
+  .mem_ahb_hrdata             (mem_ahb_hrdata[31:0]),
+  .slave_ahb_hsel             (slave_ahb_hsel),
+  .slave_ahb_hready           (slave_ahb_hready),
+  .slave_ahb_hreadyout        (slave_ahb_hreadyout),
+  .slave_ahb_htrans           (slave_ahb_htrans[1:0]),
+  .slave_ahb_hsize            (slave_ahb_hsize[2:0]),
+  .slave_ahb_hburst           (slave_ahb_hburst[2:0]),
+  .slave_ahb_hwrite           (slave_ahb_hwrite),
+  .slave_ahb_haddr            (slave_ahb_haddr[31:0]),
+  .slave_ahb_hwdata           (slave_ahb_hwdata[31:0]),
+  .slave_ahb_hresp            (slave_ahb_hresp),
+  .slave_ahb_hrdata           (slave_ahb_hrdata[31:0]),
+  .ext_dma_DMACBREQ           (ext_dma_DMACBREQ[3:0]),
+  .ext_dma_DMACLBREQ          (ext_dma_DMACLBREQ[3:0]),
+  .ext_dma_DMACSREQ           (ext_dma_DMACSREQ[3:0]),
+  .ext_dma_DMACLSREQ          (ext_dma_DMACLSREQ[3:0]),
+  .ext_dma_DMACCLR            (ext_dma_DMACCLR[3:0]),
+  .ext_dma_DMACTC             (ext_dma_DMACTC[3:0]),
+  .local_int                  (local_int[3:0])
+);
+// END Instantiate ADC
+
+
+///////////////////
+// bram allocation
+//  16byte per tile (8*8), each 8 lines (128*8) has 16 tiles = 256 Bytes
+//  000-0FF output image buffer A
+//      [000] -> A-H of (0,0)to(7,0)  [001] -> I-P of (0,0)to(7,0)
+//      [002] -> A-H of (8,0)to(15,0) [003] -> I-P of (8,0)to(15,0)
+//      ...
+//      [0FE] -> A-H of (120,8) to (127,8) [0FF] -> I-P of (120,8)(127,8)
+//  100-1FF output image buffer B
+//  
+//  tile data are generated during sensor reading, occupies bram port A, for writing image and reading matrix data (to compare)
+//  another high freq clock drives encoding and SRAM writing logic on port B.
+//
+//  800-835 compare matrix (cam reg a006-a035 shifted to [800:82F])
+//////////////////
+
+reg [11:0]  bram_addr_a = 12'hFFF;
+reg [11:0]  bram_addr_b = 12'hFFF;
+reg [7:0]   bram_data_in_a = 8'b0;
+reg [7:0]   bram_data_in_b = 8'b0;
+reg         bram_rden_a = 1'b0;
+reg         bram_rden_b = 1'b0;
+reg         bram_wren_a = 1'b0;
+reg         bram_wren_b = 1'b0;
+wire [7:0]  bram_data_out_a;
+wire [7:0]  bram_data_out_b;
+
+localparam [11:0] ImageBufferA = 12'h000;
+localparam [11:0] ImageBufferB = 12'h100;
+localparam [11:0] CompMat = 12'h800;
+
+function [11:0] matL_addr;
+  input [1:0] x, y;
+  begin
+    matL_addr = CompMat + (12'd12 * y + x);
+  end
+endfunction
+
+function [11:0] matM_addr;
+  input [1:0] x, y;
+  begin
+    matM_addr = CompMat + (12'd12 * y + x) + 12'd1;
+  end
+endfunction
+
+function [11:0] matH_addr;
+  input [1:0] x, y;
+  begin
+    matH_addr = CompMat + (12'd12 * y + x) + 12'd2;
+  end
+endfunction
+
+block_ram	block_ram_inst (
+	.address_a    (bram_addr_a),
+	.address_b    (bram_addr_b),
+	.clock        (sys_clock),
+	.data_a       (bram_data_in_a),
+	.data_b       (bram_data_in_b),
+	.rden_a       (bram_rden_a),
+	.rden_b       (bram_rden_b),
+	.wren_a       (bram_wren_a),
+	.wren_b       (bram_wren_b),
+	.q_a          (bram_data_out_a),
+	.q_b          (bram_data_out_b)
+);
+
+
+//assign debug_bram_output_a[7:0] = bram_data_out_a[7:0];
+//assign debug_bram_output_b[7:0] = bram_data_out_b[7:0];
+
+assign cart_nRST = 1'bz;
+assign ram_ce2 = 1'b1;
+
+reg [7:0] test_bram_addr = 8'b0;
+reg testbegin = 1'b0;
+
+always @(negedge resetn)
+begin
+  testbegin <= 1'b1;
+end
+
+// bram functional IO regs
+reg reg_w_req = 1'b0; // port A high priority
+reg [11:0]  reg_w_addr = 12'b0;
+reg [7:0]   reg_w_data = 8'b0;
+
+reg sens_w_req = 1'b0;// port A low priority
+reg [11:0]  sens_w_addr = 12'b0;
+reg [7:0]   sens_w_data = 8'b0;
+
+reg reg_r_req = 1'b0;
+reg [11:0] reg_r_addr = 12'b0;
+wire [7:0] reg_r_data;
+assign reg_r_data[7:0] = bram_data_out_a[7:0];
+
+reg sens_r_req = 1'b0;
+reg [11:0] sens_r_addr = 12'b0;
+wire [7:0] sens_r_data;
+assign sens_r_data[7:0] = bram_data_out_a[7:0];
+
+wire bram_w_sig;
+assign bram_w_sig = reg_w_req | sens_w_req;
+
+// port A
+always @(bram_w_sig, reg_r_req)
+begin
+  bram_addr_a[11:0] <= 12'b0;
+  bram_data_in_a[7:0] <= 8'b0;
+  bram_wren_a <= bram_w_sig;
+  bram_rden_a <= bram_w_sig ? 1'b0 : reg_r_req;
+  if (reg_w_req) begin
+    bram_addr_a[11:0] <= reg_w_addr[11:0];
+    bram_data_in_a[7:0] <= reg_w_data[7:0];
+  end else if(sens_w_req) begin // sens
+    bram_addr_a[11:0] <= sens_w_addr[11:0];
+    bram_data_in_a[7:0] <= sens_w_data[7:0];
+  end else if (reg_r_req) begin
+    bram_addr_a[11:0] <= reg_r_addr[11:0];
+  end
+end
+
+
+/////////////////
+// Camera XCK
+reg xck_r = 1'b0;
+always @(cart_CLK)
+begin 
+  if (cart_CLK) begin
+    xck_r <= ~xck_r;
+  end
+
+  // if (testbegin) begin
+  //   bram_rden <= cart_CLK;
+  //   if (test_bram_addr > 0) begin
+  //     bram_rdaddress <= {3'b0, test_bram_addr[7:0] - 1};
+  //   end
+
+  //   bram_wraddress <= {3'b0, test_bram_addr[7:0]};
+  //   bram_data_in <= test_bram_addr + 8'h80;
+    
+  //   if (!bram_wren) begin
+  //     if (test_bram_addr == 8'h7F) begin
+  //       test_bram_addr <= 8'd0;
+  //     end else begin
+  //       test_bram_addr <= test_bram_addr + 8'd1;
+  //     end
+  //   end
+
+  //   bram_wren <= ~bram_wren;
+  // end
+end
+
+assign sens_xck = xck_r;
+// Camera XCK
+/////////////////
+
+wire [15:0] cart_input_addr;
+assign cart_input_addr[15:0] = cart_a[15:0];
+
+////////////////
+// ROM Address
+reg [7:0] rom_bank_id = 8'h01; // MAC_GBD has 64 ROM bank
+//assign debug_ROM_BANK[7:0] = rom_bank_id[7:0];
+
+wire is_rom_addr;
+assign is_rom_addr = (cart_input_addr >= 16'h0000 && cart_input_addr <= 16'h7FFF); // same as MBC1
+wire is_rom_bank0_addr;
+assign is_rom_bank0_addr = (cart_input_addr >= 16'h0000 && cart_input_addr <= 16'h3FFF);
+
+wire [22:14] rom_addr_high_bits;
+assign rom_addr_high_bits[22:14] = is_rom_bank0_addr ? 9'b0 : {3'b000, rom_bank_id[5:0]};
+
+wire is_setting_rom_bank_id;
+assign is_setting_rom_bank_id = (cart_input_addr >= 16'h2000 && cart_input_addr <= 16'h3FFF);
+wire rom_bank_set_clk;
+assign rom_bank_set_clk = ~cart_nWR & is_setting_rom_bank_id; // && ~cart_a[15]
+
+always@(negedge rom_bank_set_clk)
+begin
+  rom_bank_id[7:0] <= cart_d[7:0];
+end
+
+// signal output
+assign rom_nCS = cart_a[15];
+assign rom_a[22:14] = rom_addr_high_bits[22:14];
+// ROM Address
+////////////////
+
+//////////////////////
+// Cam registers
+//////////////////////
+reg reset_cam_a000 = 1'b0;
+reg [2:0] cam_a000 = 3'b0;
+reg [7:0] cam_a001 = 8'b0; // Reg 1
+reg [7:0] cam_a002 = 8'b0; // Reg 2
+reg [7:0] cam_a003 = 8'b0; // Reg 3
+reg [7:0] cam_reg4 = 8'h01; //
+reg [7:0] cam_reg5 = 8'h00; // positive image
+reg [7:0] cam_reg6 = 8'h01; //
+reg [7:0] cam_a004 = 8'b0; // Reg 7
+reg [7:0] cam_a005 = 8'b0; // Reg 0
+//(* ramstyle = "M9K" *) reg [7:0] cam_a006[6:53]; // compare matrix
+
+////////////////////////////////////////////
+// RAM & Register & CAM-Register Address
+reg ram_write_en = 1'b0;
+reg is_capturing = 1'b0;
+reg ram_capture_output_en = 1'b0; // output to sram when capture
+reg [4:0] ram_bank_id = 5'b0; // 16 RAM bank + 1 Cam register
+
+//assign debug_RAM_BANK[7:0] = {3'b0, ram_bank_id[4:0]};
+
+wire cam_reg_selected;
+assign cam_reg_selected = (ram_bank_id[4]); // bank_id >= 0x10 to enable cam regs
+
+wire is_ram_addr;
+assign is_ram_addr = (cart_input_addr >= 16'hA000 && cart_input_addr <= 16'hBFFF);
+
+wire is_setting_ram_write;
+assign is_setting_ram_write = (cart_input_addr >= 16'h0000 && cart_input_addr <= 16'h1FFF);
+
+wire ram_write_en_clk;
+assign ram_write_en_clk = ~cart_nWR & is_setting_ram_write;
+
+always @(negedge ram_write_en_clk)
+begin
+  ram_write_en <= (cart_d[3:0] == 4'hA);
+end
+
+wire is_setting_ram_bank_id;
+assign is_setting_ram_bank_id = (cart_input_addr >= 16'h4000 && cart_input_addr <= 16'h5FFF);
+// set ram bank id, also update cam_reg_selected
+wire ram_bank_id_set_clk;
+assign ram_bank_id_set_clk = ~cart_nWR & is_setting_ram_bank_id; // 4000-5FFF
+always @(negedge ram_bank_id_set_clk)
+begin
+    ram_bank_id[4:0] <= cart_d[4:0];
+end
+
+wire is_addr_a000;
+assign is_addr_a000 = (is_ram_addr & cart_input_addr[6:0] == 7'h00);
+wire write_cam_reg_a000_clk;
+assign write_cam_reg_a000_clk = ~cart_nWR & (cam_reg_selected & is_addr_a000);
+
+wire is_addr_a001;
+assign is_addr_a001 = (is_ram_addr & cart_input_addr[6:0] == 7'h01);
+wire write_cam_reg_a001_clk;
+assign write_cam_reg_a001_clk = ~cart_nWR & (cam_reg_selected & is_addr_a001);
+
+wire is_addr_a002;
+assign is_addr_a002 = (is_ram_addr & cart_input_addr[6:0] == 7'h02);
+wire write_cam_reg_a002_clk;
+assign write_cam_reg_a002_clk = ~cart_nWR & (cam_reg_selected & is_addr_a002);
+
+wire is_addr_a003;
+assign is_addr_a003 = (is_ram_addr & cart_input_addr[6:0] == 7'h03);
+wire write_cam_reg_a003_clk;
+assign write_cam_reg_a003_clk = ~cart_nWR & (cam_reg_selected & is_addr_a003);
+
+wire is_addr_a004;
+assign is_addr_a004 = (is_ram_addr & cart_input_addr[6:0] == 7'h04);
+wire write_cam_reg_a004_clk;
+assign write_cam_reg_a004_clk = ~cart_nWR & (cam_reg_selected & is_addr_a004);
+
+wire is_addr_a005;
+assign is_addr_a005 = (is_ram_addr & cart_input_addr[6:0] == 7'h05);
+wire write_cam_reg_a005_clk;
+assign write_cam_reg_a005_clk = ~cart_nWR & (cam_reg_selected & is_addr_a005);
+
+wire is_addr_a006;
+assign is_addr_a006 = (is_ram_addr & cart_input_addr[6:0] >= 7'h06 & cart_input_addr[6:0] <= 7'h35);
+wire write_cam_reg_a006_sig;
+assign write_cam_reg_a006_sig = ~cart_nWR & (cam_reg_selected & is_addr_a006);
+
+always @(negedge write_cam_reg_a000_clk or posedge reset_cam_a000)
+begin
+  if (reset_cam_a000) begin
+    cam_a000[2:0] <= 3'b0;
+  end else begin
+    cam_a000[2:0] <= cart_d[2:0];
+  end
+end
+
+always @(negedge write_cam_reg_a001_clk)
+begin
+  cam_a001[7:0] <= cart_d[7:0];
+end
+
+always @(negedge write_cam_reg_a002_clk)
+begin
+  cam_a002[7:0] <= cart_d[7:0];
+end
+
+always @(negedge write_cam_reg_a003_clk)
+begin
+  cam_a003[7:0] <= cart_d[7:0];
+end
+
+always @(negedge write_cam_reg_a004_clk)
+begin
+  cam_a004[7:0] <= cart_d[7:0];
+end
+
+always @(negedge write_cam_reg_a005_clk)
+begin
+  cam_a005[7:0] <= cart_d[7:0];
+end
+
+reg last_write_cam_reg_a006_sig = 1'b0;
+always @(posedge sys_clock)
+begin
+  if (last_write_cam_reg_a006_sig && !write_cam_reg_a006_sig) begin
+    reg_w_req <= 1'b1;
+    reg_w_addr[11:0] <= CompMat | (cart_input_addr[6:0] - 7'h6);
+    reg_w_data <= cart_d[7:0];
+  end else begin
+    reg_w_req <= 1'b0;
+    reg_w_addr[11:0] <= CompMat;
+    reg_w_data <= 8'b0;
+  end
+
+  last_write_cam_reg_a006_sig <= write_cam_reg_a006_sig;
+end
+
+reg [7:0] data_output_r = 8'b0;
+
+wire read_cam_reg_clk;
+assign read_cam_reg_clk = ~cart_nRD & ~cart_nCS & is_ram_addr & cam_reg_selected;
+always @(posedge read_cam_reg_clk) begin
+  data_output_r[7:0] <= 8'b0;
+  if (cart_a[7:0] == 8'h00) begin // only reg a000 is readable
+    data_output_r[7:0] <= {5'b0, cam_a000[2:0]};
+  end
+end
+
+
+wire [16:13] ram_addr_high;
+assign ram_addr_high[16:13] = ram_bank_id[3:0];
+
+// signal output
+assign ram_nCS = ~(~cart_nCS /*& is_ram_addr*/ & ~cam_reg_selected); // ram selected and not accessing camera register
+assign ram_nWE = cart_nWR;//is_capturing ? ~ram_capture_output_en : (cart_nWR | ~ram_write_en);
+assign ram_a[16:13] = ram_addr_high[16:13];
+
+
+assign cart_d[7:0] = 8'hz;
+//assign cart_d[7:0] = (~cart_nRD & ~cart_nCS & is_ram_addr & cam_reg_selected) ? 8'hAA/*data_output_r[7:0]*/ : 8'hz;
+
+// RAM & Register & CAM-Register Address
+////////////////////////////////////////////
+
+
+////////////////////
+// Camera capture
+integer xck_count = 0; // current xck step, reset pulse = 0
+// assign OUT_xck_count[31:0] = xck_count;
+
+reg[3:0] reg_bit_count = 4'b0; 
+reg reset_pulse_activated = 1'b0;
+reg sens_load_r = 1'b0;
+reg sens_read_r = 1'b0;
+reg sens_reset_r = 1'b1;
+reg sens_sin_r = 1'b0;
+reg sens_start_r = 1'b0;
+
+`define N_BIT cam_a001[7]
+wire [15:0] exposure_steps;
+assign exposure_steps = {cam_a002[7:0], cam_a003[7:0]};
+
+wire[0:87] CAM_REG_SEQ;
+assign CAM_REG_SEQ[0:87] = 
+{
+  3'b001, cam_a001[7:0],
+  3'b010, cam_a002[7:0],
+  3'b011, cam_a003[7:0],
+  3'b100, cam_reg4[7:0],
+  3'b101, cam_reg5[7:0],
+  3'b110, cam_reg6[7:0],
+  3'b111, cam_a004[7:0],
+  3'b000, cam_a005[7:0]
+};
+
+wire cam_capture_start;
+assign cam_capture_start = cam_a000[0];
+
+assign dbgout8 = cart_nWR;
+assign dbgout6 = sens_xck;
+assign dbgout4 = 1'hz;
+
+// always @(negedge cart_CLK)
+// begin
+//   if (cam_capture_start) begin
+//     is_capturing <= 1;
+
+// /*
+//     if (xck_count <= 0) begin
+//       if (!sens_xck) begin // sens_rst trigger as posedge of xck
+//         sens_reset_r <= 1'b0;
+//         reset_pulse_activated <= 1'b1;  // successfully send reset pulse
+//       end else if (sens_xck && reset_pulse_activated) begin
+//         sens_reset_r <= 1'b1;
+//         xck_count <= xck_count + 1;
+//       end
+//     end else if (xck_count <= 8 * 11) begin // configure sensor registers, data setup at ~xck
+//       if (!sens_xck) begin
+//         sens_sin_r <= CAM_REG_SEQ[xck_count - 1];
+//         sens_load_r <= 1'b0;
+//         reg_bit_count <= reg_bit_count + 1'd1;
+//       end else begin
+//         // load should trigger on negedge of xck
+//         if (reg_bit_count == 4'd11) begin
+//           sens_load_r <= 1'b1;
+//           reg_bit_count <= 0;
+//         end
+//         xck_count <= xck_count + 1;
+//       end
+//     end else if (xck_count <= 90) begin
+//       if (sens_xck) begin
+//         xck_count <= xck_count + 1;
+//       end
+//     end else begin
+//       if (!sens_xck) begin
+//         xck_count <= 0;
+//         reset_cam_a000 <= 1'b1;
+//       end
+//     end
+// */
+
+//     if (xck_count <= 0) begin
+//       if (!sens_xck) begin // sens_rst trigger as posedge of xck
+//         sens_reset_r <= 1'b0;
+//         reset_pulse_activated <= 1'b1;  // successfully send reset pulse
+//       end else if (sens_xck && reset_pulse_activated) begin
+//         sens_reset_r <= 1'b1;
+//         xck_count <= xck_count + 1;
+//       end
+//     end else if (xck_count <= 8 * 11) begin // configure sensor registers, data setup at ~xck
+//       if (!sens_xck) begin
+//         sens_sin_r <= CAM_REG_SEQ[xck_count - 1];
+//         sens_load_r <= 1'b0;
+//         reg_bit_count <= reg_bit_count + 1'd1;
+//       end else begin
+//         // load should trigger on negedge of xck
+//         if (reg_bit_count == 4'd11) begin
+//           sens_load_r <= 1'b1;
+//           reg_bit_count <= 0;
+//         end
+//         xck_count <= xck_count + 1;
+//       end
+//     end else if (xck_count <= 89) begin // wait
+//       sens_load_r <= 1'b0;
+//       if (sens_xck) begin
+//         xck_count <= xck_count + 1;
+//       end
+//     end else if (xck_count <= 90) begin // start pulse
+//       if (!sens_xck) begin
+//         sens_start_r <= 1'b1;
+//       end else begin
+//         sens_start_r <= 1'b0;
+//         xck_count <= xck_count + 1;
+//       end
+//     end else if (xck_count <= 90 + exposure_steps * 8) begin
+//       if (sens_xck) begin
+//         xck_count <= xck_count + 1;
+//       end
+//     end else if (xck_count <= 90 + exposure_steps * 8 + 1) begin
+//       if (sens_xck) begin
+//         xck_count <= xck_count + 1;
+//       end
+//     end else if (xck_count <= 90 + exposure_steps * 8 + 2) begin
+//       if (sens_xck) begin
+//         sens_read_r <= 1;
+//         xck_count <= xck_count + 1;
+//       end
+//     end else if (xck_count <= 90 + exposure_steps * 8 + 2 + (`N_BIT ? 16128 : 16384)) begin
+//       if (sens_xck) begin
+//         xck_count <= xck_count + 1;
+//       end
+//     end else if (xck_count <= 90 + exposure_steps * 8 + 2 + (`N_BIT ? 16128 : 16384) + 2) begin
+//       if (sens_xck) begin
+//         sens_read_r <= 0;
+//         xck_count <= xck_count + 1;
+//       end
+//     end else begin
+//       if (sens_xck) begin // sens_rst trigger as posedge of xck
+//         sens_reset_r <= 1'b0;
+//       end else if (!sens_xck) begin
+//         sens_reset_r <= 1'b1;
+//         reset_cam_a000 <= 1'b1;
+//         xck_count <= 0;
+//       end
+//     end
+
+//   end else begin
+//     reset_cam_a000 <= 1'b0;
+//     is_capturing <= 0;
+//   end
+// end
+
+
+assign sens_load = sens_load_r;
+assign sens_read = sens_read_r;
+assign sens_reset = sens_reset_r;
+assign sens_sin = sens_sin_r;
+assign sens_start = sens_start_r;
+
+// Camera capture
+////////////////////
+
+endmodule
+
+`default_nettype wire

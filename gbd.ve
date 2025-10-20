@@ -1,0 +1,81 @@
+SYSCLK 150
+BUSCLK 50
+PLL_CLKIN PIN_OSC # Use internal clock @150MHz
+# PLLCLK4 10
+
+
+#####################
+# MCU 
+#####################
+GPIO1_0 PIN_42 # saved for extension
+
+
+#####################
+# MCU <-> CPLD 
+#####################
+
+
+
+#####################
+# CPLD 
+#####################
+# PLL_CLKOUT4     pll_clk4
+
+## signals from gameboy
+cart_CLK        PIN_58  :INPUT
+cart_nWR        PIN_62  :INPUT
+cart_nRD        PIN_53  :INPUT
+cart_nCS        PIN_65  :INPUT
+cart_a[0]       PIN_67  :INOUT
+cart_a[1]       PIN_70  :INOUT
+cart_a[2]       PIN_71  :INOUT
+cart_a[3]       PIN_77  :INOUT
+cart_a[4]       PIN_86  :INOUT
+cart_a[5]       PIN_87  :INOUT
+cart_a[6]       PIN_88  :INOUT
+cart_a[7]       PIN_91  :INOUT
+cart_a[8]       PIN_92  :INOUT
+cart_a[9]       PIN_3   :INOUT
+cart_a[10]      PIN_4   :INOUT
+cart_a[11]      PIN_5   :INOUT
+cart_a[12]      PIN_7   :INOUT
+cart_a[13]      PIN_15  :INOUT
+cart_a[14]      PIN_24  :INOUT
+cart_a[15]      PIN_25  :INOUT
+cart_d[0]       PIN_78  :INOUT
+cart_d[1]       PIN_79  :INOUT
+cart_d[2]       PIN_80  :INOUT
+cart_d[3]       PIN_81  :INOUT
+cart_d[4]       PIN_82  :INOUT
+cart_d[5]       PIN_83  :INOUT
+cart_d[6]       PIN_84  :INOUT
+cart_d[7]       PIN_85  :INOUT
+cart_nRST       PIN_1   :OUTPUT
+
+## mbc functions
+rom_nCS         PIN_66  :OUTPUT
+rom_a[14]       PIN_16  :OUTPUT
+rom_a[15]       PIN_17  :OUTPUT
+rom_a[16]       PIN_18  :OUTPUT
+rom_a[17]       PIN_26  :OUTPUT
+rom_a[18]       PIN_95  :OUTPUT
+rom_a[19]       PIN_96  :OUTPUT
+rom_a[20]       PIN_2   :OUTPUT
+rom_a[21]       PIN_98  :OUTPUT
+rom_a[22]       PIN_97  :OUTPUT
+ram_nCS         PIN_40  :OUTPUT
+ram_nWE         PIN_54  :OUTPUT
+ram_ce2         PIN_63  :OUTPUT
+ram_a[13]       PIN_64  :OUTPUT
+ram_a[14]       PIN_59  :OUTPUT
+ram_a[15]       PIN_61  :OUTPUT
+ram_a[16]       PIN_60  :OUTPUT
+
+## Camera
+# sens_vout on adc in 5
+sens_read       PIN_31  :OUTPUT
+sens_xck        PIN_32  :OUTPUT
+sens_reset      PIN_33  :OUTPUT
+sens_load       PIN_34  :OUTPUT
+sens_sin        PIN_35  :OUTPUT
+sens_start      PIN_36  :OUTPUT

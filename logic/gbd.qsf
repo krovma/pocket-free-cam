@@ -1,0 +1,675 @@
+# Design name Assignments, replace __design_name__ with actual design name
+# ========================
+set_global_assignment -name FAMILY "Cyclone IV E"
+set_global_assignment -name DEVICE EP4CE75F29C8
+
+set_global_assignment -name TOP_LEVEL_ENTITY "gbd"
+set_global_assignment -name SEARCH_PATH ag32gbd_ip
+
+
+
+
+#set_global_assignment -name LOGICLOCK_INCREMENTAL_COMPILE_FILE "atom_netlists/__design_name__.vqm"
+
+# Project-Wide Assignments
+# ========================
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 11.1
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "09:37:04  JANUARY 04, 2013"
+set_global_assignment -name LAST_QUARTUS_VERSION "13.0 SP1"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY ./quartus_logs
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
+set_global_assignment -name FLOW_ENABLE_IO_ASSIGNMENT_ANALYSIS ON
+#set_global_assignment -name SMART_RECOMPILE ON
+
+# Classic Timing Assignments
+# ==========================
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+
+# Analysis & Synthesis Assignments
+# ================================
+set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS ON
+set_global_assignment -name ADV_NETLIST_OPT_SYNTH_WYSIWYG_REMAP ON
+#set_global_assignment -name MAX_BALANCING_DSP_BLOCKS 0
+#set_global_assignment -name AUTO_ROM_RECOGNITION OFF
+#set_global_assignment -name AUTO_RAM_RECOGNITION OFF
+#set_global_assignment -name MAX_RAM_BLOCKS_M4K 0
+set_global_assignment -name AUTO_OPEN_DRAIN_PINS OFF
+# set_instance_assignment -name PRESERVE_REGISTER ON -to *
+#set_instance_assignment -name PRESERVE_PLL_COUNTER_ORDER ON -to *
+#set_instance_assignment -name MAX_NUMBER_OF_REGISTERS_FROM_UNINFERRED_RAMS 0 -to *
+
+# Fitter Assignments
+# ==================
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
+set_global_assignment -name ROUTING_BACK_ANNOTATION_MODE OFF
+set_global_assignment -name OPTIMIZE_HOLD_TIMING "IO PATHS AND MINIMUM TPD PATHS"
+set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
+set_global_assignment -name ROUTER_TIMING_OPTIMIZATION_LEVEL MAXIMUM
+set_global_assignment -name PLACEMENT_EFFORT_MULTIPLIER 10
+set_global_assignment -name ROUTER_EFFORT_MULTIPLIER 10
+set_global_assignment -name ECO_OPTIMIZE_TIMING ON
+set_global_assignment -name FINAL_PLACEMENT_OPTIMIZATION ALWAYS
+set_global_assignment -name FITTER_AGGRESSIVE_ROUTABILITY_OPTIMIZATION ALWAYS
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVTTL"
+set_global_assignment -name IO_PLACEMENT_OPTIMIZATION ON
+set_global_assignment -name SEED 1
+set_global_assignment -name FIT_ONLY_ONE_ATTEMPT OFF
+set_global_assignment -name MAX_GLOBAL_CLOCKS_ALLOWED 6
+set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC ON
+#set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_RETIMING ON
+#set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON
+set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC_FOR_AREA ON
+set_global_assignment -name PHYSICAL_SYNTHESIS_EFFORT EXTRA
+
+# EDA Netlist Writer Assignments
+# ==============================
+set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim (Verilog)"
+
+# LogicLock Region Assignments
+# ============================
+set_global_assignment -name LOGICLOCK_INCREMENTAL_COMPILE_ASSIGNMENT OFF
+
+# Power Estimation Assignments
+# ============================
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+
+# start EDA_TOOL_SETTINGS(eda_simulation)
+# ---------------------------------------
+
+# EDA Netlist Writer Assignments
+# ==============================
+set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
+set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VERILOG HDL" -section_id eda_simulation
+
+# end EDA_TOOL_SETTINGS(eda_simulation)
+# -------------------------------------
+
+# start DESIGN_PARTITION(Top)
+# ---------------------------
+
+# Incremental Compilation Assignments
+# ===================================
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name FLOW_DISABLE_ASSEMBLER ON
+
+# end DESIGN_PARTITION(Top)
+# -------------------------
+
+set_global_assignment -name LL_ENABLED ON -section_id core_logic
+set_global_assignment -name LL_AUTO_SIZE OFF -section_id core_logic
+set_global_assignment -name LL_STATE LOCKED -section_id core_logic
+set_global_assignment -name LL_RESERVED OFF -section_id core_logic
+set_global_assignment -name LL_SECURITY_ROUTING_INTERFACE OFF -section_id core_logic
+set_global_assignment -name LL_IGNORE_IO_BANK_SECURITY_CONSTRAINT OFF -section_id core_logic
+set_global_assignment -name LL_PR_REGION OFF -section_id core_logic
+set_global_assignment -name LL_WIDTH 20 -section_id core_logic
+set_global_assignment -name LL_HEIGHT 12 -section_id core_logic
+set_global_assignment -name LL_ORIGIN X43_Y1 -section_id core_logic
+set_global_assignment -name LL_MEMBER_OF core_logic -section_id core_logic
+
+set_global_assignment -name LL_ENABLED ON -section_id LOGIC_RESERVE_0
+set_global_assignment -name LL_AUTO_SIZE OFF -section_id LOGIC_RESERVE_0
+set_global_assignment -name LL_STATE LOCKED -section_id LOGIC_RESERVE_0
+set_global_assignment -name LL_RESERVED ON -section_id LOGIC_RESERVE_0
+set_global_assignment -name LL_SECURITY_ROUTING_INTERFACE OFF -section_id LOGIC_RESERVE_0
+set_global_assignment -name LL_IGNORE_IO_BANK_SECURITY_CONSTRAINT OFF -section_id LOGIC_RESERVE_0
+set_global_assignment -name LL_PR_REGION OFF -section_id LOGIC_RESERVE_0
+set_global_assignment -name LL_WIDTH 13 -section_id LOGIC_RESERVE_0
+set_global_assignment -name LL_HEIGHT 8 -section_id LOGIC_RESERVE_0
+set_global_assignment -name LL_ORIGIN X43_Y5 -section_id LOGIC_RESERVE_0
+
+set_global_assignment -name MAX_BALANCING_DSP_BLOCKS 0
+set_global_assignment -name MAX_RAM_BLOCKS_M4K 4
+
+set_location_assignment LCCOMB_X43_Y4_N0 -to gpio2_io_in[0]
+set_location_assignment LCCOMB_X43_Y4_N2 -to gpio2_io_in[1]
+set_location_assignment LCCOMB_X43_Y4_N4 -to gpio2_io_in[2]
+set_location_assignment LCCOMB_X43_Y4_N6 -to gpio2_io_in[3]
+set_location_assignment LCCOMB_X43_Y4_N8 -to gpio2_io_in[4]
+set_location_assignment LCCOMB_X43_Y4_N10 -to gpio2_io_in[5]
+set_location_assignment LCCOMB_X43_Y4_N12 -to gpio2_io_in[6]
+set_location_assignment LCCOMB_X43_Y4_N14 -to gpio2_io_in[7]
+set_location_assignment LCCOMB_X43_Y4_N16 -to gpio2_io_out_en[3]
+set_location_assignment LCCOMB_X43_Y4_N18 -to gpio2_io_out_en[4]
+set_location_assignment LCCOMB_X43_Y4_N20 -to gpio2_io_out_en[5]
+set_location_assignment LCCOMB_X43_Y4_N22 -to gpio2_io_out_en[6]
+set_location_assignment LCCOMB_X43_Y4_N24 -to gpio2_io_out_en[7]
+set_location_assignment LCCOMB_X43_Y4_N26 -to gpio3_io_out_data[0]
+set_location_assignment LCCOMB_X43_Y4_N28 -to gpio3_io_out_data[1]
+set_location_assignment LCCOMB_X43_Y4_N30 -to gpio3_io_out_data[2]
+set_location_assignment LCCOMB_X43_Y3_N0 -to gpio3_io_out_data[3]
+set_location_assignment LCCOMB_X43_Y3_N2 -to gpio3_io_out_data[4]
+set_location_assignment LCCOMB_X43_Y3_N4 -to gpio3_io_out_data[5]
+set_location_assignment LCCOMB_X43_Y3_N6 -to gpio3_io_out_data[6]
+
+set_location_assignment LCCOMB_X44_Y4_N0 -to gpio3_io_in[0]
+set_location_assignment LCCOMB_X44_Y4_N2 -to gpio3_io_in[1]
+set_location_assignment LCCOMB_X44_Y4_N4 -to gpio3_io_in[2]
+set_location_assignment LCCOMB_X44_Y4_N6 -to gpio3_io_in[3]
+set_location_assignment LCCOMB_X44_Y4_N8 -to gpio3_io_in[4]
+set_location_assignment LCCOMB_X44_Y4_N10 -to gpio3_io_in[5]
+set_location_assignment LCCOMB_X44_Y4_N12 -to gpio3_io_in[6]
+set_location_assignment LCCOMB_X44_Y4_N14 -to gpio3_io_in[7]
+set_location_assignment LCCOMB_X44_Y4_N16 -to gpio3_io_out_data[7]
+set_location_assignment LCCOMB_X44_Y4_N18 -to gpio3_io_out_en[0]
+set_location_assignment LCCOMB_X44_Y4_N20 -to gpio3_io_out_en[1]
+set_location_assignment LCCOMB_X44_Y4_N22 -to gpio3_io_out_en[2]
+set_location_assignment LCCOMB_X44_Y4_N24 -to gpio3_io_out_en[3]
+set_location_assignment LCCOMB_X44_Y4_N26 -to gpio3_io_out_en[4]
+set_location_assignment LCCOMB_X44_Y4_N28 -to gpio3_io_out_en[5]
+set_location_assignment LCCOMB_X44_Y4_N30 -to gpio3_io_out_en[6]
+set_location_assignment LCCOMB_X44_Y3_N0 -to gpio3_io_out_en[7]
+set_location_assignment LCCOMB_X44_Y3_N2 -to gpio4_io_out_data[0]
+set_location_assignment LCCOMB_X44_Y3_N4 -to gpio4_io_out_data[1]
+set_location_assignment LCCOMB_X44_Y3_N6 -to gpio4_io_out_data[2]
+
+set_location_assignment LCCOMB_X45_Y4_N0 -to gpio4_io_in[0]
+set_location_assignment LCCOMB_X45_Y4_N2 -to gpio4_io_in[1]
+set_location_assignment LCCOMB_X45_Y4_N4 -to gpio4_io_in[2]
+set_location_assignment LCCOMB_X45_Y4_N6 -to gpio4_io_in[3]
+set_location_assignment LCCOMB_X45_Y4_N8 -to gpio4_io_in[4]
+set_location_assignment LCCOMB_X45_Y4_N10 -to gpio4_io_in[5]
+set_location_assignment LCCOMB_X45_Y4_N12 -to gpio4_io_in[6]
+set_location_assignment LCCOMB_X45_Y4_N14 -to gpio4_io_in[7]
+set_location_assignment LCCOMB_X45_Y4_N16 -to gpio4_io_out_data[3]
+set_location_assignment LCCOMB_X45_Y4_N18 -to gpio4_io_out_data[4]
+set_location_assignment LCCOMB_X45_Y4_N20 -to gpio4_io_out_data[5]
+set_location_assignment LCCOMB_X45_Y4_N22 -to gpio4_io_out_data[6]
+set_location_assignment LCCOMB_X45_Y4_N24 -to gpio4_io_out_data[7]
+set_location_assignment LCCOMB_X45_Y4_N26 -to gpio4_io_out_en[0]
+set_location_assignment LCCOMB_X45_Y4_N28 -to gpio4_io_out_en[1]
+set_location_assignment LCCOMB_X45_Y4_N30 -to gpio4_io_out_en[2]
+set_location_assignment LCCOMB_X45_Y3_N0 -to gpio4_io_out_en[3]
+set_location_assignment LCCOMB_X45_Y3_N2 -to gpio4_io_out_en[4]
+set_location_assignment LCCOMB_X45_Y3_N4 -to gpio4_io_out_en[5]
+set_location_assignment LCCOMB_X45_Y3_N6 -to gpio4_io_out_en[6]
+
+set_location_assignment LCCOMB_X46_Y4_N0 -to gpio5_io_in[0]
+set_location_assignment LCCOMB_X46_Y4_N2 -to gpio5_io_in[1]
+set_location_assignment LCCOMB_X46_Y4_N4 -to gpio5_io_in[2]
+set_location_assignment LCCOMB_X46_Y4_N6 -to gpio5_io_in[3]
+set_location_assignment LCCOMB_X46_Y4_N8 -to gpio5_io_in[4]
+set_location_assignment LCCOMB_X46_Y4_N10 -to gpio5_io_in[5]
+set_location_assignment LCCOMB_X46_Y4_N12 -to gpio5_io_in[6]
+set_location_assignment LCCOMB_X46_Y4_N14 -to gpio5_io_in[7]
+set_location_assignment LCCOMB_X46_Y4_N16 -to gpio4_io_out_en[7]
+set_location_assignment LCCOMB_X46_Y4_N18 -to gpio5_io_out_data[0]
+set_location_assignment LCCOMB_X46_Y4_N20 -to gpio5_io_out_data[1]
+set_location_assignment LCCOMB_X46_Y4_N22 -to gpio5_io_out_data[2]
+set_location_assignment LCCOMB_X46_Y4_N24 -to gpio5_io_out_data[3]
+set_location_assignment LCCOMB_X46_Y4_N26 -to gpio5_io_out_data[4]
+set_location_assignment LCCOMB_X46_Y4_N28 -to gpio5_io_out_data[5]
+set_location_assignment LCCOMB_X46_Y4_N30 -to gpio5_io_out_data[6]
+set_location_assignment LCCOMB_X46_Y3_N0 -to gpio5_io_out_data[7]
+set_location_assignment LCCOMB_X46_Y3_N2 -to gpio5_io_out_en[0]
+set_location_assignment LCCOMB_X46_Y3_N4 -to gpio5_io_out_en[1]
+set_location_assignment LCCOMB_X46_Y3_N6 -to gpio5_io_out_en[2]
+
+set_location_assignment LCCOMB_X47_Y4_N0 -to gpio6_io_in[0]
+set_location_assignment LCCOMB_X47_Y4_N2 -to gpio6_io_in[1]
+set_location_assignment LCCOMB_X47_Y4_N4 -to gpio6_io_in[2]
+set_location_assignment LCCOMB_X47_Y4_N6 -to gpio6_io_in[3]
+set_location_assignment LCCOMB_X47_Y4_N8 -to gpio6_io_in[4]
+set_location_assignment LCCOMB_X47_Y4_N10 -to gpio6_io_in[5]
+set_location_assignment LCCOMB_X47_Y4_N12 -to gpio6_io_in[6]
+set_location_assignment LCCOMB_X47_Y4_N14 -to gpio6_io_in[7]
+set_location_assignment LCCOMB_X47_Y4_N16 -to gpio5_io_out_en[3]
+set_location_assignment LCCOMB_X47_Y4_N18 -to gpio5_io_out_en[4]
+set_location_assignment LCCOMB_X47_Y4_N20 -to gpio5_io_out_en[5]
+set_location_assignment LCCOMB_X47_Y4_N22 -to gpio5_io_out_en[6]
+set_location_assignment LCCOMB_X47_Y4_N24 -to gpio5_io_out_en[7]
+set_location_assignment LCCOMB_X47_Y4_N26 -to gpio6_io_out_data[0]
+set_location_assignment LCCOMB_X47_Y4_N28 -to gpio6_io_out_data[1]
+set_location_assignment LCCOMB_X47_Y4_N30 -to gpio6_io_out_data[2]
+set_location_assignment LCCOMB_X47_Y3_N0 -to gpio6_io_out_data[3]
+set_location_assignment LCCOMB_X47_Y3_N2 -to gpio6_io_out_data[4]
+set_location_assignment LCCOMB_X47_Y3_N4 -to gpio6_io_out_data[5]
+
+set_location_assignment LCCOMB_X48_Y4_N0 -to gpio7_io_in[0]
+set_location_assignment LCCOMB_X48_Y4_N2 -to gpio7_io_in[1]
+set_location_assignment LCCOMB_X48_Y4_N4 -to gpio7_io_in[2]
+set_location_assignment LCCOMB_X48_Y4_N6 -to gpio7_io_in[3]
+set_location_assignment LCCOMB_X48_Y4_N8 -to gpio7_io_in[4]
+set_location_assignment LCCOMB_X48_Y4_N10 -to gpio7_io_in[5]
+set_location_assignment LCCOMB_X48_Y4_N12 -to gpio7_io_in[6]
+set_location_assignment LCCOMB_X48_Y4_N14 -to gpio7_io_in[7]
+set_location_assignment LCCOMB_X48_Y4_N16 -to gpio6_io_out_data[6]
+set_location_assignment LCCOMB_X48_Y4_N18 -to gpio6_io_out_data[7]
+set_location_assignment LCCOMB_X48_Y4_N20 -to gpio6_io_out_en[0]
+set_location_assignment LCCOMB_X48_Y4_N22 -to gpio6_io_out_en[1]
+set_location_assignment LCCOMB_X48_Y4_N24 -to gpio6_io_out_en[2]
+set_location_assignment LCCOMB_X48_Y4_N26 -to gpio6_io_out_en[3]
+set_location_assignment LCCOMB_X48_Y4_N28 -to gpio6_io_out_en[4]
+set_location_assignment LCCOMB_X48_Y4_N30 -to gpio6_io_out_en[5]
+set_location_assignment LCCOMB_X48_Y3_N0 -to gpio6_io_out_en[6]
+set_location_assignment LCCOMB_X48_Y3_N2 -to gpio6_io_out_en[7]
+set_location_assignment LCCOMB_X48_Y3_N4 -to gpio7_io_out_data[0]
+
+set_location_assignment LCCOMB_X49_Y4_N0 -to gpio8_io_in[0]
+set_location_assignment LCCOMB_X49_Y4_N2 -to gpio8_io_in[1]
+set_location_assignment LCCOMB_X49_Y4_N4 -to gpio8_io_in[2]
+set_location_assignment LCCOMB_X49_Y4_N6 -to gpio8_io_in[3]
+set_location_assignment LCCOMB_X49_Y4_N8 -to gpio8_io_in[4]
+set_location_assignment LCCOMB_X49_Y4_N10 -to gpio8_io_in[5]
+set_location_assignment LCCOMB_X49_Y4_N12 -to gpio8_io_in[6]
+set_location_assignment LCCOMB_X49_Y4_N14 -to gpio8_io_in[7]
+set_location_assignment LCCOMB_X49_Y4_N16 -to gpio7_io_out_data[1]
+set_location_assignment LCCOMB_X49_Y4_N18 -to gpio7_io_out_data[2]
+set_location_assignment LCCOMB_X49_Y4_N20 -to gpio7_io_out_data[3]
+set_location_assignment LCCOMB_X49_Y4_N22 -to gpio7_io_out_data[4]
+set_location_assignment LCCOMB_X49_Y4_N24 -to gpio7_io_out_data[5]
+set_location_assignment LCCOMB_X49_Y4_N26 -to gpio7_io_out_data[6]
+set_location_assignment LCCOMB_X49_Y4_N28 -to gpio7_io_out_data[7]
+set_location_assignment LCCOMB_X49_Y4_N30 -to gpio7_io_out_en[0]
+set_location_assignment LCCOMB_X49_Y3_N0 -to gpio7_io_out_en[1]
+set_location_assignment LCCOMB_X49_Y3_N2 -to gpio7_io_out_en[2]
+set_location_assignment LCCOMB_X49_Y3_N4 -to gpio7_io_out_en[3]
+
+set_location_assignment LCCOMB_X50_Y4_N0 -to gpio9_io_in[0]
+set_location_assignment LCCOMB_X50_Y4_N2 -to gpio9_io_in[1]
+set_location_assignment LCCOMB_X50_Y4_N4 -to gpio9_io_in[2]
+set_location_assignment LCCOMB_X50_Y4_N6 -to gpio9_io_in[3]
+set_location_assignment LCCOMB_X50_Y4_N8 -to gpio9_io_in[4]
+set_location_assignment LCCOMB_X50_Y4_N10 -to gpio9_io_in[5]
+set_location_assignment LCCOMB_X50_Y4_N12 -to gpio9_io_in[6]
+set_location_assignment LCCOMB_X50_Y4_N14 -to gpio9_io_in[7]
+set_location_assignment LCCOMB_X50_Y4_N16 -to gpio7_io_out_en[4]
+set_location_assignment LCCOMB_X50_Y4_N18 -to gpio7_io_out_en[5]
+set_location_assignment LCCOMB_X50_Y4_N20 -to gpio7_io_out_en[6]
+set_location_assignment LCCOMB_X50_Y4_N22 -to gpio7_io_out_en[7]
+set_location_assignment LCCOMB_X50_Y4_N24 -to gpio8_io_out_data[0]
+set_location_assignment LCCOMB_X50_Y4_N26 -to gpio8_io_out_data[1]
+set_location_assignment LCCOMB_X50_Y4_N28 -to gpio8_io_out_data[2]
+set_location_assignment LCCOMB_X50_Y4_N30 -to gpio8_io_out_data[3]
+set_location_assignment LCCOMB_X50_Y3_N0 -to gpio8_io_out_data[4]
+set_location_assignment LCCOMB_X50_Y3_N2 -to gpio8_io_out_data[5]
+set_location_assignment LCCOMB_X50_Y3_N4 -to gpio8_io_out_data[6]
+set_location_assignment LCCOMB_X50_Y3_N6 -to gpio8_io_out_data[7]
+
+set_location_assignment LCCOMB_X51_Y4_N0 -to ext_resetn
+set_location_assignment LCCOMB_X51_Y4_N2 -to ext_int[0]
+set_location_assignment LCCOMB_X51_Y4_N4 -to ext_int[1]
+set_location_assignment LCCOMB_X51_Y4_N6 -to ext_int[2]
+set_location_assignment LCCOMB_X51_Y4_N8 -to ext_int[3]
+set_location_assignment LCCOMB_X51_Y4_N10 -to ext_int[4]
+set_location_assignment LCCOMB_X51_Y4_N12 -to ext_int[5]
+set_location_assignment LCCOMB_X51_Y4_N14 -to ext_int[6]
+set_location_assignment LCCOMB_X51_Y4_N16 -to ext_int[7]
+set_location_assignment LCCOMB_X51_Y4_N18 -to gpio8_io_out_en[0]
+set_location_assignment LCCOMB_X51_Y4_N20 -to gpio8_io_out_en[1]
+set_location_assignment LCCOMB_X51_Y4_N22 -to gpio8_io_out_en[2]
+set_location_assignment LCCOMB_X51_Y4_N24 -to gpio8_io_out_en[3]
+set_location_assignment LCCOMB_X51_Y4_N26 -to gpio8_io_out_en[4]
+set_location_assignment LCCOMB_X51_Y4_N28 -to gpio8_io_out_en[5]
+set_location_assignment LCCOMB_X51_Y4_N30 -to gpio8_io_out_en[6]
+set_location_assignment LCCOMB_X51_Y3_N0 -to gpio8_io_out_en[7]
+set_location_assignment LCCOMB_X51_Y3_N2 -to gpio9_io_out_data[0]
+set_location_assignment LCCOMB_X51_Y3_N4 -to gpio9_io_out_data[1]
+set_location_assignment LCCOMB_X51_Y3_N6 -to gpio9_io_out_data[2]
+
+set_location_assignment LCCOMB_X52_Y4_N0 -to ext_dma_DMACBREQ[0]
+set_location_assignment LCCOMB_X52_Y4_N2 -to ext_dma_DMACBREQ[1]
+set_location_assignment LCCOMB_X52_Y4_N4 -to ext_dma_DMACBREQ[2]
+set_location_assignment LCCOMB_X52_Y4_N6 -to ext_dma_DMACBREQ[3]
+set_location_assignment LCCOMB_X52_Y4_N8 -to ext_dma_DMACLBREQ[0]
+set_location_assignment LCCOMB_X52_Y4_N10 -to ext_dma_DMACLBREQ[1]
+set_location_assignment LCCOMB_X52_Y4_N12 -to ext_dma_DMACLBREQ[2]
+set_location_assignment LCCOMB_X52_Y4_N14 -to ext_dma_DMACLBREQ[3]
+set_location_assignment LCCOMB_X52_Y4_N16 -to gpio9_io_out_data[3]
+set_location_assignment LCCOMB_X52_Y4_N18 -to gpio9_io_out_data[4]
+set_location_assignment LCCOMB_X52_Y4_N20 -to gpio9_io_out_data[5]
+set_location_assignment LCCOMB_X52_Y4_N22 -to gpio9_io_out_data[6]
+set_location_assignment LCCOMB_X52_Y4_N24 -to gpio9_io_out_data[7]
+set_location_assignment LCCOMB_X52_Y4_N26 -to gpio9_io_out_en[0]
+set_location_assignment LCCOMB_X52_Y4_N28 -to gpio9_io_out_en[1]
+set_location_assignment LCCOMB_X52_Y4_N30 -to gpio9_io_out_en[2]
+set_location_assignment LCCOMB_X52_Y3_N0 -to gpio9_io_out_en[3]
+set_location_assignment LCCOMB_X52_Y3_N2 -to gpio9_io_out_en[4]
+set_location_assignment LCCOMB_X52_Y3_N4 -to gpio9_io_out_en[5]
+
+set_location_assignment LCCOMB_X53_Y4_N0 -to ext_dma_DMACSREQ[0]
+set_location_assignment LCCOMB_X53_Y4_N2 -to ext_dma_DMACSREQ[1]
+set_location_assignment LCCOMB_X53_Y4_N4 -to ext_dma_DMACSREQ[2]
+set_location_assignment LCCOMB_X53_Y4_N6 -to ext_dma_DMACSREQ[3]
+set_location_assignment LCCOMB_X53_Y4_N8 -to ext_dma_DMACLSREQ[0]
+set_location_assignment LCCOMB_X53_Y4_N10 -to ext_dma_DMACLSREQ[1]
+set_location_assignment LCCOMB_X53_Y4_N12 -to ext_dma_DMACLSREQ[2]
+set_location_assignment LCCOMB_X53_Y4_N14 -to ext_dma_DMACLSREQ[3]
+set_location_assignment LCCOMB_X53_Y4_N16 -to gpio9_io_out_en[6]
+set_location_assignment LCCOMB_X53_Y4_N18 -to gpio9_io_out_en[7]
+set_location_assignment LCCOMB_X53_Y4_N20 -to dmactive
+
+set_location_assignment LCCOMB_X54_Y4_N0 -to local_int[0]
+set_location_assignment LCCOMB_X54_Y4_N2 -to local_int[1]
+set_location_assignment LCCOMB_X54_Y4_N4 -to local_int[2]
+set_location_assignment LCCOMB_X54_Y4_N6 -to local_int[3]
+set_location_assignment LCCOMB_X54_Y4_N10 -to usb0_id
+set_location_assignment LCCOMB_X54_Y4_N12 -to ext_dma_DMACCLR[0]
+set_location_assignment LCCOMB_X54_Y4_N14 -to ext_dma_DMACCLR[1]
+set_location_assignment LCCOMB_X54_Y4_N16 -to ext_dma_DMACCLR[2]
+set_location_assignment LCCOMB_X54_Y4_N18 -to ext_dma_DMACCLR[3]
+set_location_assignment LCCOMB_X54_Y4_N20 -to ext_dma_DMACTC[0]
+set_location_assignment LCCOMB_X54_Y4_N22 -to ext_dma_DMACTC[1]
+set_location_assignment LCCOMB_X54_Y4_N24 -to ext_dma_DMACTC[2]
+set_location_assignment LCCOMB_X54_Y4_N26 -to ext_dma_DMACTC[3]
+
+set_location_assignment LCCOMB_X56_Y12_N0 -to mem_ahb_hreadyout
+set_location_assignment LCCOMB_X56_Y12_N2 -to mem_ahb_hresp
+set_location_assignment LCCOMB_X56_Y12_N4 -to mem_ahb_hrdata[0]
+set_location_assignment LCCOMB_X56_Y12_N6 -to mem_ahb_hrdata[1]
+set_location_assignment LCCOMB_X56_Y12_N8 -to mem_ahb_hrdata[2]
+set_location_assignment LCCOMB_X56_Y12_N10 -to mem_ahb_hrdata[3]
+set_location_assignment LCCOMB_X56_Y12_N12 -to mem_ahb_hrdata[4]
+set_location_assignment LCCOMB_X56_Y12_N14 -to mem_ahb_hrdata[5]
+set_location_assignment LCCOMB_X56_Y12_N16 -to mem_ahb_hrdata[6]
+set_location_assignment LCCOMB_X56_Y12_N18 -to mem_ahb_hrdata[7]
+set_location_assignment LCCOMB_X56_Y12_N20 -to mem_ahb_hrdata[8]
+set_location_assignment LCCOMB_X56_Y12_N22 -to mem_ahb_hrdata[9]
+set_location_assignment LCCOMB_X56_Y12_N24 -to mem_ahb_hrdata[10]
+set_location_assignment LCCOMB_X56_Y12_N26 -to mem_ahb_hrdata[11]
+set_location_assignment LCCOMB_X56_Y12_N28 -to mem_ahb_hrdata[12]
+set_location_assignment LCCOMB_X56_Y12_N30 -to mem_ahb_hready
+set_location_assignment LCCOMB_X57_Y12_N0 -to mem_ahb_htrans[0]
+set_location_assignment LCCOMB_X57_Y12_N2 -to mem_ahb_htrans[1]
+set_location_assignment LCCOMB_X57_Y12_N4 -to mem_ahb_hsize[0]
+set_location_assignment LCCOMB_X57_Y12_N6 -to mem_ahb_hsize[1]
+set_location_assignment LCCOMB_X57_Y12_N8 -to mem_ahb_hsize[2]
+set_location_assignment LCCOMB_X57_Y12_N10 -to mem_ahb_hburst[0]
+set_location_assignment LCCOMB_X57_Y12_N12 -to mem_ahb_hburst[1]
+set_location_assignment LCCOMB_X57_Y12_N14 -to mem_ahb_hburst[2]
+set_location_assignment LCCOMB_X57_Y12_N16 -to mem_ahb_hwrite
+set_location_assignment LCCOMB_X57_Y12_N18 -to mem_ahb_haddr[0]
+set_location_assignment LCCOMB_X57_Y12_N20 -to mem_ahb_haddr[1]
+set_location_assignment LCCOMB_X57_Y12_N22 -to mem_ahb_haddr[2]
+set_location_assignment LCCOMB_X57_Y12_N24 -to mem_ahb_haddr[3]
+set_location_assignment LCCOMB_X57_Y12_N26 -to mem_ahb_haddr[4]
+set_location_assignment LCCOMB_X57_Y12_N28 -to mem_ahb_haddr[5]
+set_location_assignment LCCOMB_X57_Y12_N30 -to mem_ahb_haddr[6]
+set_location_assignment LCCOMB_X58_Y12_N0 -to mem_ahb_haddr[7]
+set_location_assignment LCCOMB_X58_Y12_N2 -to mem_ahb_haddr[8]
+set_location_assignment LCCOMB_X58_Y12_N4 -to mem_ahb_haddr[9]
+
+set_location_assignment LCCOMB_X56_Y11_N0 -to mem_ahb_hrdata[13]
+set_location_assignment LCCOMB_X56_Y11_N2 -to mem_ahb_hrdata[14]
+set_location_assignment LCCOMB_X56_Y11_N4 -to mem_ahb_hrdata[15]
+set_location_assignment LCCOMB_X56_Y11_N6 -to mem_ahb_hrdata[16]
+set_location_assignment LCCOMB_X56_Y11_N8 -to mem_ahb_hrdata[17]
+set_location_assignment LCCOMB_X56_Y11_N10 -to mem_ahb_hrdata[18]
+set_location_assignment LCCOMB_X56_Y11_N12 -to mem_ahb_hrdata[19]
+set_location_assignment LCCOMB_X56_Y11_N14 -to mem_ahb_hrdata[20]
+set_location_assignment LCCOMB_X56_Y11_N16 -to mem_ahb_hrdata[21]
+set_location_assignment LCCOMB_X56_Y11_N18 -to mem_ahb_hrdata[22]
+set_location_assignment LCCOMB_X56_Y11_N20 -to mem_ahb_hrdata[23]
+set_location_assignment LCCOMB_X56_Y11_N22 -to mem_ahb_hrdata[24]
+set_location_assignment LCCOMB_X56_Y11_N24 -to mem_ahb_hrdata[25]
+set_location_assignment LCCOMB_X56_Y11_N26 -to mem_ahb_hrdata[26]
+set_location_assignment LCCOMB_X56_Y11_N28 -to mem_ahb_hrdata[27]
+set_location_assignment LCCOMB_X56_Y11_N30 -to mem_ahb_hrdata[28]
+set_location_assignment LCCOMB_X57_Y11_N0 -to mem_ahb_hrdata[29]
+set_location_assignment LCCOMB_X57_Y11_N2 -to mem_ahb_hrdata[30]
+set_location_assignment LCCOMB_X57_Y11_N4 -to mem_ahb_hrdata[31]
+set_location_assignment LCCOMB_X57_Y11_N6 -to mem_ahb_haddr[10]
+set_location_assignment LCCOMB_X57_Y11_N8 -to mem_ahb_haddr[11]
+set_location_assignment LCCOMB_X57_Y11_N10 -to mem_ahb_haddr[12]
+set_location_assignment LCCOMB_X57_Y11_N12 -to mem_ahb_haddr[13]
+set_location_assignment LCCOMB_X57_Y11_N14 -to mem_ahb_haddr[14]
+set_location_assignment LCCOMB_X57_Y11_N16 -to mem_ahb_haddr[15]
+set_location_assignment LCCOMB_X57_Y11_N18 -to mem_ahb_haddr[16]
+set_location_assignment LCCOMB_X57_Y11_N20 -to mem_ahb_haddr[17]
+set_location_assignment LCCOMB_X57_Y11_N22 -to mem_ahb_haddr[18]
+set_location_assignment LCCOMB_X57_Y11_N24 -to mem_ahb_haddr[19]
+set_location_assignment LCCOMB_X57_Y11_N26 -to mem_ahb_haddr[20]
+set_location_assignment LCCOMB_X57_Y11_N28 -to mem_ahb_haddr[21]
+set_location_assignment LCCOMB_X57_Y11_N30 -to mem_ahb_haddr[22]
+set_location_assignment LCCOMB_X58_Y11_N0 -to mem_ahb_haddr[23]
+set_location_assignment LCCOMB_X58_Y11_N2 -to mem_ahb_haddr[24]
+set_location_assignment LCCOMB_X58_Y11_N4 -to mem_ahb_haddr[25]
+set_location_assignment LCCOMB_X58_Y11_N6 -to mem_ahb_haddr[26]
+set_location_assignment LCCOMB_X58_Y11_N8 -to mem_ahb_haddr[27]
+set_location_assignment LCCOMB_X58_Y11_N10 -to mem_ahb_haddr[28]
+set_location_assignment LCCOMB_X58_Y11_N12 -to mem_ahb_haddr[29]
+
+set_location_assignment LCCOMB_X56_Y10_N0 -to slave_ahb_hsel
+set_location_assignment LCCOMB_X56_Y10_N2 -to slave_ahb_hready
+set_location_assignment LCCOMB_X56_Y10_N4 -to slave_ahb_htrans[0]
+set_location_assignment LCCOMB_X56_Y10_N6 -to slave_ahb_htrans[1]
+set_location_assignment LCCOMB_X56_Y10_N8 -to slave_ahb_hsize[0]
+set_location_assignment LCCOMB_X56_Y10_N10 -to slave_ahb_hsize[1]
+set_location_assignment LCCOMB_X56_Y10_N12 -to slave_ahb_hsize[2]
+set_location_assignment LCCOMB_X56_Y10_N14 -to slave_ahb_hburst[0]
+set_location_assignment LCCOMB_X56_Y10_N16 -to slave_ahb_hburst[1]
+set_location_assignment LCCOMB_X56_Y10_N18 -to slave_ahb_hburst[2]
+set_location_assignment LCCOMB_X56_Y10_N20 -to slave_ahb_hwrite
+set_location_assignment LCCOMB_X56_Y10_N22 -to slave_ahb_haddr[0]
+set_location_assignment LCCOMB_X56_Y10_N24 -to slave_ahb_haddr[1]
+set_location_assignment LCCOMB_X56_Y10_N26 -to slave_ahb_haddr[2]
+set_location_assignment LCCOMB_X56_Y10_N28 -to slave_ahb_haddr[3]
+set_location_assignment LCCOMB_X56_Y10_N30 -to mem_ahb_haddr[30]
+set_location_assignment LCCOMB_X57_Y10_N0 -to mem_ahb_haddr[31]
+set_location_assignment LCCOMB_X57_Y10_N2 -to mem_ahb_hwdata[0]
+set_location_assignment LCCOMB_X57_Y10_N4 -to mem_ahb_hwdata[1]
+set_location_assignment LCCOMB_X57_Y10_N6 -to mem_ahb_hwdata[2]
+set_location_assignment LCCOMB_X57_Y10_N8 -to mem_ahb_hwdata[3]
+set_location_assignment LCCOMB_X57_Y10_N10 -to mem_ahb_hwdata[4]
+set_location_assignment LCCOMB_X57_Y10_N12 -to mem_ahb_hwdata[5]
+set_location_assignment LCCOMB_X57_Y10_N14 -to mem_ahb_hwdata[6]
+set_location_assignment LCCOMB_X57_Y10_N16 -to mem_ahb_hwdata[7]
+set_location_assignment LCCOMB_X57_Y10_N18 -to mem_ahb_hwdata[8]
+set_location_assignment LCCOMB_X57_Y10_N20 -to mem_ahb_hwdata[9]
+set_location_assignment LCCOMB_X57_Y10_N22 -to mem_ahb_hwdata[10]
+set_location_assignment LCCOMB_X57_Y10_N24 -to mem_ahb_hwdata[11]
+set_location_assignment LCCOMB_X57_Y10_N26 -to mem_ahb_hwdata[12]
+set_location_assignment LCCOMB_X57_Y10_N28 -to mem_ahb_hwdata[13]
+set_location_assignment LCCOMB_X57_Y10_N30 -to mem_ahb_hwdata[14]
+set_location_assignment LCCOMB_X58_Y10_N0 -to mem_ahb_hwdata[15]
+set_location_assignment LCCOMB_X58_Y10_N2 -to mem_ahb_hwdata[16]
+set_location_assignment LCCOMB_X58_Y10_N6 -to mem_ahb_hwdata[17]
+
+set_location_assignment LCCOMB_X56_Y9_N0 -to slave_ahb_haddr[4]
+set_location_assignment LCCOMB_X56_Y9_N2 -to slave_ahb_haddr[5]
+set_location_assignment LCCOMB_X56_Y9_N4 -to slave_ahb_haddr[6]
+set_location_assignment LCCOMB_X56_Y9_N6 -to slave_ahb_haddr[7]
+set_location_assignment LCCOMB_X56_Y9_N8 -to slave_ahb_haddr[8]
+set_location_assignment LCCOMB_X56_Y9_N10 -to slave_ahb_haddr[9]
+set_location_assignment LCCOMB_X56_Y9_N12 -to slave_ahb_haddr[10]
+set_location_assignment LCCOMB_X56_Y9_N14 -to slave_ahb_haddr[11]
+set_location_assignment LCCOMB_X56_Y9_N16 -to slave_ahb_haddr[12]
+set_location_assignment LCCOMB_X56_Y9_N18 -to slave_ahb_haddr[13]
+set_location_assignment LCCOMB_X56_Y9_N20 -to slave_ahb_haddr[14]
+set_location_assignment LCCOMB_X56_Y9_N22 -to slave_ahb_haddr[15]
+set_location_assignment LCCOMB_X56_Y9_N24 -to slave_ahb_haddr[16]
+set_location_assignment LCCOMB_X56_Y9_N26 -to slave_ahb_haddr[17]
+set_location_assignment LCCOMB_X56_Y9_N28 -to slave_ahb_haddr[18]
+set_location_assignment LCCOMB_X56_Y9_N30 -to mem_ahb_hwdata[18]
+set_location_assignment LCCOMB_X57_Y9_N0 -to mem_ahb_hwdata[19]
+set_location_assignment LCCOMB_X57_Y9_N2 -to mem_ahb_hwdata[20]
+set_location_assignment LCCOMB_X57_Y9_N4 -to mem_ahb_hwdata[21]
+set_location_assignment LCCOMB_X57_Y9_N6 -to mem_ahb_hwdata[22]
+set_location_assignment LCCOMB_X57_Y9_N8 -to mem_ahb_hwdata[23]
+set_location_assignment LCCOMB_X57_Y9_N10 -to mem_ahb_hwdata[24]
+set_location_assignment LCCOMB_X57_Y9_N12 -to mem_ahb_hwdata[25]
+set_location_assignment LCCOMB_X57_Y9_N14 -to mem_ahb_hwdata[26]
+set_location_assignment LCCOMB_X57_Y9_N16 -to mem_ahb_hwdata[27]
+set_location_assignment LCCOMB_X57_Y9_N18 -to mem_ahb_hwdata[28]
+set_location_assignment LCCOMB_X57_Y9_N20 -to mem_ahb_hwdata[29]
+set_location_assignment LCCOMB_X57_Y9_N22 -to mem_ahb_hwdata[30]
+set_location_assignment LCCOMB_X57_Y9_N24 -to mem_ahb_hwdata[31]
+set_location_assignment LCCOMB_X57_Y9_N26 -to slave_ahb_hreadyout
+set_location_assignment LCCOMB_X57_Y9_N28 -to slave_ahb_hresp
+set_location_assignment LCCOMB_X57_Y9_N30 -to slave_ahb_hrdata[0]
+set_location_assignment LCCOMB_X58_Y9_N0 -to slave_ahb_hrdata[1]
+set_location_assignment LCCOMB_X58_Y9_N2 -to slave_ahb_hrdata[2]
+set_location_assignment LCCOMB_X58_Y9_N4 -to slave_ahb_hrdata[3]
+
+set_location_assignment LCCOMB_X56_Y8_N0 -to slave_ahb_haddr[19]
+set_location_assignment LCCOMB_X56_Y8_N2 -to slave_ahb_haddr[20]
+set_location_assignment LCCOMB_X56_Y8_N4 -to slave_ahb_haddr[21]
+set_location_assignment LCCOMB_X56_Y8_N6 -to slave_ahb_haddr[22]
+set_location_assignment LCCOMB_X56_Y8_N8 -to slave_ahb_haddr[23]
+set_location_assignment LCCOMB_X56_Y8_N10 -to slave_ahb_haddr[24]
+set_location_assignment LCCOMB_X56_Y8_N12 -to slave_ahb_haddr[25]
+set_location_assignment LCCOMB_X56_Y8_N14 -to slave_ahb_haddr[26]
+set_location_assignment LCCOMB_X56_Y8_N16 -to slave_ahb_haddr[27]
+set_location_assignment LCCOMB_X56_Y8_N18 -to slave_ahb_haddr[28]
+set_location_assignment LCCOMB_X56_Y8_N20 -to slave_ahb_haddr[29]
+set_location_assignment LCCOMB_X56_Y8_N22 -to slave_ahb_haddr[30]
+set_location_assignment LCCOMB_X56_Y8_N24 -to slave_ahb_haddr[31]
+set_location_assignment LCCOMB_X56_Y8_N26 -to slave_ahb_hwdata[0]
+set_location_assignment LCCOMB_X56_Y8_N28 -to slave_ahb_hwdata[1]
+set_location_assignment LCCOMB_X56_Y8_N30 -to slave_ahb_hrdata[4]
+set_location_assignment LCCOMB_X57_Y8_N0 -to slave_ahb_hrdata[5]
+set_location_assignment LCCOMB_X57_Y8_N2 -to slave_ahb_hrdata[6]
+set_location_assignment LCCOMB_X57_Y8_N4 -to slave_ahb_hrdata[7]
+set_location_assignment LCCOMB_X57_Y8_N6 -to slave_ahb_hrdata[8]
+set_location_assignment LCCOMB_X57_Y8_N8 -to slave_ahb_hrdata[9]
+set_location_assignment LCCOMB_X57_Y8_N10 -to slave_ahb_hrdata[10]
+set_location_assignment LCCOMB_X57_Y8_N12 -to slave_ahb_hrdata[11]
+set_location_assignment LCCOMB_X57_Y8_N14 -to slave_ahb_hrdata[12]
+set_location_assignment LCCOMB_X57_Y8_N16 -to slave_ahb_hrdata[13]
+set_location_assignment LCCOMB_X57_Y8_N18 -to slave_ahb_hrdata[14]
+set_location_assignment LCCOMB_X57_Y8_N20 -to slave_ahb_hrdata[15]
+set_location_assignment LCCOMB_X57_Y8_N22 -to slave_ahb_hrdata[16]
+set_location_assignment LCCOMB_X57_Y8_N24 -to slave_ahb_hrdata[17]
+set_location_assignment LCCOMB_X57_Y8_N26 -to slave_ahb_hrdata[18]
+set_location_assignment LCCOMB_X57_Y8_N28 -to slave_ahb_hrdata[19]
+set_location_assignment LCCOMB_X57_Y8_N30 -to slave_ahb_hrdata[20]
+set_location_assignment LCCOMB_X58_Y8_N0 -to slave_ahb_hrdata[21]
+set_location_assignment LCCOMB_X58_Y8_N2 -to slave_ahb_hrdata[22]
+set_location_assignment LCCOMB_X58_Y8_N4 -to slave_ahb_hrdata[23]
+
+set_location_assignment LCCOMB_X56_Y7_N0 -to slave_ahb_hwdata[2]
+set_location_assignment LCCOMB_X56_Y7_N2 -to slave_ahb_hwdata[3]
+set_location_assignment LCCOMB_X56_Y7_N4 -to slave_ahb_hwdata[4]
+set_location_assignment LCCOMB_X56_Y7_N6 -to slave_ahb_hwdata[5]
+set_location_assignment LCCOMB_X56_Y7_N8 -to slave_ahb_hwdata[6]
+set_location_assignment LCCOMB_X56_Y7_N10 -to slave_ahb_hwdata[7]
+set_location_assignment LCCOMB_X56_Y7_N12 -to slave_ahb_hwdata[8]
+set_location_assignment LCCOMB_X56_Y7_N14 -to slave_ahb_hwdata[9]
+set_location_assignment LCCOMB_X56_Y7_N16 -to slave_ahb_hwdata[10]
+set_location_assignment LCCOMB_X56_Y7_N18 -to slave_ahb_hwdata[11]
+set_location_assignment LCCOMB_X56_Y7_N20 -to slave_ahb_hwdata[12]
+set_location_assignment LCCOMB_X56_Y7_N22 -to slave_ahb_hwdata[13]
+set_location_assignment LCCOMB_X56_Y7_N24 -to slave_ahb_hwdata[14]
+set_location_assignment LCCOMB_X56_Y7_N26 -to slave_ahb_hwdata[15]
+set_location_assignment LCCOMB_X56_Y7_N28 -to slave_ahb_hrdata[24]
+set_location_assignment LCCOMB_X56_Y7_N30 -to slave_ahb_hrdata[25]
+set_location_assignment LCCOMB_X57_Y7_N0 -to slave_ahb_hrdata[26]
+set_location_assignment LCCOMB_X57_Y7_N2 -to slave_ahb_hrdata[27]
+set_location_assignment LCCOMB_X57_Y7_N4 -to slave_ahb_hrdata[28]
+set_location_assignment LCCOMB_X57_Y7_N6 -to slave_ahb_hrdata[29]
+set_location_assignment LCCOMB_X57_Y7_N8 -to slave_ahb_hrdata[30]
+set_location_assignment LCCOMB_X57_Y7_N10 -to slave_ahb_hrdata[31]
+set_location_assignment LCCOMB_X57_Y7_N12 -to gpio0_io_out_data[0]
+set_location_assignment LCCOMB_X57_Y7_N14 -to gpio0_io_out_data[1]
+set_location_assignment LCCOMB_X57_Y7_N16 -to gpio0_io_out_data[2]
+set_location_assignment LCCOMB_X57_Y7_N18 -to gpio0_io_out_data[3]
+set_location_assignment LCCOMB_X57_Y7_N20 -to gpio0_io_out_data[4]
+set_location_assignment LCCOMB_X57_Y7_N22 -to gpio0_io_out_data[5]
+set_location_assignment LCCOMB_X57_Y7_N24 -to gpio0_io_out_data[6]
+set_location_assignment LCCOMB_X57_Y7_N26 -to gpio0_io_out_data[7]
+set_location_assignment LCCOMB_X57_Y7_N28 -to gpio0_io_out_en[0]
+set_location_assignment LCCOMB_X57_Y7_N30 -to gpio0_io_out_en[1]
+set_location_assignment LCCOMB_X58_Y7_N0 -to gpio0_io_out_en[2]
+set_location_assignment LCCOMB_X58_Y7_N2 -to gpio0_io_out_en[3]
+
+set_location_assignment LCCOMB_X56_Y6_N0 -to slave_ahb_hwdata[16]
+set_location_assignment LCCOMB_X56_Y6_N2 -to slave_ahb_hwdata[17]
+set_location_assignment LCCOMB_X56_Y6_N4 -to slave_ahb_hwdata[18]
+set_location_assignment LCCOMB_X56_Y6_N6 -to slave_ahb_hwdata[19]
+set_location_assignment LCCOMB_X56_Y6_N8 -to slave_ahb_hwdata[20]
+set_location_assignment LCCOMB_X56_Y6_N10 -to slave_ahb_hwdata[21]
+set_location_assignment LCCOMB_X56_Y6_N12 -to slave_ahb_hwdata[22]
+set_location_assignment LCCOMB_X56_Y6_N14 -to slave_ahb_hwdata[23]
+set_location_assignment LCCOMB_X56_Y6_N16 -to slave_ahb_hwdata[24]
+set_location_assignment LCCOMB_X56_Y6_N18 -to slave_ahb_hwdata[25]
+set_location_assignment LCCOMB_X56_Y6_N20 -to slave_ahb_hwdata[26]
+set_location_assignment LCCOMB_X56_Y6_N22 -to slave_ahb_hwdata[27]
+set_location_assignment LCCOMB_X56_Y6_N24 -to slave_ahb_hwdata[28]
+set_location_assignment LCCOMB_X56_Y6_N26 -to slave_ahb_hwdata[29]
+set_location_assignment LCCOMB_X56_Y6_N28 -to slave_ahb_hwdata[30]
+set_location_assignment LCCOMB_X56_Y6_N30 -to slave_ahb_hwdata[31]
+set_location_assignment LCCOMB_X57_Y6_N0 -to gpio0_io_out_en[4]
+set_location_assignment LCCOMB_X57_Y6_N2 -to gpio0_io_out_en[5]
+set_location_assignment LCCOMB_X57_Y6_N4 -to gpio0_io_out_en[6]
+set_location_assignment LCCOMB_X57_Y6_N6 -to gpio0_io_out_en[7]
+set_location_assignment LCCOMB_X57_Y6_N8 -to gpio1_io_out_data[0]
+set_location_assignment LCCOMB_X57_Y6_N10 -to gpio1_io_out_data[1]
+set_location_assignment LCCOMB_X57_Y6_N12 -to gpio1_io_out_data[2]
+set_location_assignment LCCOMB_X57_Y6_N14 -to gpio1_io_out_data[3]
+set_location_assignment LCCOMB_X57_Y6_N16 -to gpio1_io_out_data[4]
+set_location_assignment LCCOMB_X57_Y6_N18 -to gpio1_io_out_data[5]
+set_location_assignment LCCOMB_X57_Y6_N20 -to gpio1_io_out_data[6]
+set_location_assignment LCCOMB_X57_Y6_N22 -to gpio1_io_out_data[7]
+set_location_assignment LCCOMB_X57_Y6_N24 -to gpio1_io_out_en[0]
+set_location_assignment LCCOMB_X57_Y6_N26 -to gpio1_io_out_en[1]
+set_location_assignment LCCOMB_X57_Y6_N28 -to gpio1_io_out_en[2]
+set_location_assignment LCCOMB_X57_Y6_N30 -to gpio1_io_out_en[3]
+set_location_assignment LCCOMB_X58_Y6_N0 -to gpio1_io_out_en[4]
+set_location_assignment LCCOMB_X58_Y6_N2 -to gpio1_io_out_en[5]
+set_location_assignment LCCOMB_X58_Y6_N4 -to gpio1_io_out_en[6]
+set_location_assignment LCCOMB_X58_Y6_N6 -to gpio1_io_out_en[7]
+
+set_location_assignment LCCOMB_X56_Y5_N0 -to gpio0_io_in[0]
+set_location_assignment LCCOMB_X56_Y5_N2 -to gpio0_io_in[1]
+set_location_assignment LCCOMB_X56_Y5_N4 -to gpio0_io_in[2]
+set_location_assignment LCCOMB_X56_Y5_N6 -to gpio0_io_in[3]
+set_location_assignment LCCOMB_X56_Y5_N8 -to gpio0_io_in[4]
+set_location_assignment LCCOMB_X56_Y5_N10 -to gpio0_io_in[5]
+set_location_assignment LCCOMB_X56_Y5_N12 -to gpio0_io_in[6]
+set_location_assignment LCCOMB_X56_Y5_N14 -to gpio0_io_in[7]
+set_location_assignment LCCOMB_X56_Y5_N16 -to gpio1_io_in[0]
+set_location_assignment LCCOMB_X56_Y5_N18 -to gpio1_io_in[1]
+set_location_assignment LCCOMB_X56_Y5_N20 -to gpio1_io_in[2]
+set_location_assignment LCCOMB_X56_Y5_N22 -to gpio1_io_in[3]
+set_location_assignment LCCOMB_X56_Y5_N24 -to gpio1_io_in[4]
+set_location_assignment LCCOMB_X56_Y5_N26 -to gpio1_io_in[5]
+set_location_assignment LCCOMB_X56_Y5_N28 -to gpio1_io_in[6]
+set_location_assignment LCCOMB_X56_Y5_N30 -to gpio1_io_in[7]
+set_location_assignment LCCOMB_X57_Y5_N0 -to sys_ctrl_clkSource[0]
+set_location_assignment LCCOMB_X57_Y5_N2 -to sys_ctrl_clkSource[1]
+set_location_assignment LCCOMB_X57_Y5_N4 -to sys_ctrl_hseEnable
+set_location_assignment LCCOMB_X57_Y5_N6 -to sys_ctrl_hseBypass
+set_location_assignment LCCOMB_X57_Y5_N8 -to sys_ctrl_pllEnable
+set_location_assignment LCCOMB_X57_Y5_N10 -to sys_ctrl_sleep
+set_location_assignment LCCOMB_X57_Y5_N12 -to sys_ctrl_stop
+set_location_assignment LCCOMB_X57_Y5_N14 -to sys_ctrl_standby
+set_location_assignment LCCOMB_X57_Y5_N16 -to gpio2_io_out_data[0]
+set_location_assignment LCCOMB_X57_Y5_N18 -to gpio2_io_out_data[1]
+set_location_assignment LCCOMB_X57_Y5_N20 -to gpio2_io_out_data[2]
+set_location_assignment LCCOMB_X57_Y5_N22 -to gpio2_io_out_data[3]
+set_location_assignment LCCOMB_X57_Y5_N24 -to gpio2_io_out_data[4]
+set_location_assignment LCCOMB_X57_Y5_N26 -to gpio2_io_out_data[5]
+set_location_assignment LCCOMB_X57_Y5_N28 -to gpio2_io_out_data[6]
+set_location_assignment LCCOMB_X57_Y5_N30 -to gpio2_io_out_data[7]
+set_location_assignment LCCOMB_X58_Y5_N0 -to gpio2_io_out_en[0]
+set_location_assignment LCCOMB_X58_Y5_N2 -to gpio2_io_out_en[1]
+set_location_assignment LCCOMB_X58_Y5_N4 -to gpio2_io_out_en[2]
+set_location_assignment LCCOMB_X58_Y5_N6 -to resetn_out
+
+set_instance_assignment -name GLOBAL_SIGNAL GLOBAL_CLOCK -to sys_resetn
+
+set_global_assignment -name EDA_MAINTAIN_DESIGN_HIERARCHY PARTITION_ONLY -section_id eda_simulation
+set_global_assignment -name VERILOG_FILE block_ram.v
+set_global_assignment -name VERILOG_FILE analog_ip.v
+set_global_assignment -name VERILOG_FILE ahb2apb.v
+set_global_assignment -name VERILOG_FILE ag32gbd_rom.v
+set_global_assignment -name VERILOG_FILE ag32gbd_reg.v
+set_global_assignment -name VERILOG_FILE ag32gbd_ram_write.v
+set_global_assignment -name VERILOG_FILE ag32gbd_ram.v
+set_global_assignment -name VERILOG_FILE ag32gbd_ip_tb.v
+set_global_assignment -name VERILOG_FILE ag32gbd_cam.v
+set_global_assignment -name VERILOG_FILE ag32gbd_bram_ctrl.v
+set_global_assignment -name VERILOG_FILE gbd.v
+set_global_assignment -name VERILOG_FILE ag32gbd_ip.v
+set_global_assignment -name VERILOG_FILE "C:\\Users\\krovma\\.platformio\\packages\\tool-agrv_logic\\etc\\arch\\rodinia\\alta_sim.v"
+set_global_assignment -name SDC_FILE .\\gbd.sdc
+set_global_assignment -name QIP_FILE block_ram.qip
+set_global_assignment -name PARTITION_COLOR 52377 -section_id rv32 -tag alta_auto
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id rv32 -tag alta_auto
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id rv32 -tag alta_auto
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY rv32 -to "alta_rv32:rv32" -section_id rv32

@@ -1,0 +1,14 @@
+# pio_begin  >>>>>> DO NOT MODIFY THIS SECTION! >>>>>>
+if { [info exists BOARD_PLL_CLKIN] } {
+  if { $BOARD_PLL_CLKIN == "PIN_OSC" } {
+    set_config -loc 18 0 0 CFG_RCOSC_EN 1'b1
+  }
+}
+if { [info exists USB0_MODE] } {
+  alta::tcl_info "USB0_MODE = $USB0_MODE"
+  set_config -loc 0 1 3 CFG_PULLUP_ENB 1'b0
+  set_config -loc 0 1 3 CFG_PULLDN_ENB 1'b0
+}
+# pio_end    <<<<<< DO NOT MODIFY THIS SECTION! <<<<<<
+##
+

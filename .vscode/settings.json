@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "alta.h": "c",
+        "util.h": "c",
+        "interrupt.h": "c"
+    }
+}
