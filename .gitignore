@@ -50,3 +50,7 @@ PLLJ_PLLSPE_INFO.txt
 
 # output
 gbd.bin
+gbd_batch.bin
+gbd_routed.v
+gbd.inc
+ag32gbd_ip_tmpl.v
