@@ -42,6 +42,13 @@ module ag32gbd_cam (
     input Cam_Capture,
     input Cart_CLK,
 
+    input [7:0] Reg_A000,
+    input [7:0] Reg_A001,
+    input [7:0] Reg_A002,
+    input [7:0] Reg_A003,
+    input [7:0] Reg_A004,
+    input [7:0] Reg_A005,
+
     input sys_clock,
     input sys_resetn,
 
@@ -49,19 +56,23 @@ module ag32gbd_cam (
     output reg Cam_Capture_Finish
 );
 
+// input params
+wire [18:0] exposure_steps_xck = {Reg_A002[7:0], Reg_A003[7:0], 3'b000}; // (A002 << 8 + A003) * 8
+wire Nbit = Reg_A001[7];
+//wire [15:0] reading_xck = Nbit ? 15'd16128 : 15'd16384;
+
 //states
-localparam  S_IDLE      = 10'b10000_00000;
-localparam  S_RESET0    = 10'b00000_00001;
-localparam  S_CONFIG    = 10'b00000_00010;
-localparam  S_WAIT0     = 10'b00000_00100;
-
-localparam  S_START     = 10'b00000_01000;
-localparam  S_EXPOSURE  = 10'b00000_10000;
-localparam  S_WAIT1     = 10'b00001_00000;
-
-localparam  S_READ      = 10'b00010_00000;
-localparam  S_WAIT2     = 10'b00100_00000;
-localparam  S_RESET1    = 10'b01000_00000;
+localparam  S_IDLE      = 11'b1_00000_00000;
+localparam  S_RESET0    = 11'b0_00000_00001;
+localparam  S_CONFIG    = 11'b0_00000_00010;
+localparam  S_WAIT0     = 11'b0_00000_00100;
+localparam  S_START     = 11'b0_00000_01000;
+localparam  S_EXPOSURE  = 11'b0_00000_10000;
+localparam  S_WAIT1     = 11'b0_00001_00000;
+localparam  S_READ      = 11'b0_00010_00000;
+localparam  S_WAIT2     = 11'b0_00100_00000;
+localparam  S_RESET1    = 11'b0_01000_00000;
+localparam  S_FINISH    = 11'b0_10000_00000; // wait a few clocks to fully reset
 
 localparam  S_CONFIG_R1 = 3'b001;
 localparam  S_CONFIG_R2 = 3'b010;
@@ -71,6 +82,18 @@ localparam  S_CONFIG_R5 = 3'b101;
 localparam  S_CONFIG_R6 = 3'b110;
 localparam  S_CONFIG_R7 = 3'b111;
 localparam  S_CONFIG_R0 = 3'b000;
+
+localparam  S_CONFIG_BIT_A1 = 11'b0_10000_00000;
+localparam  S_CONFIG_BIT_A0 = 11'b0_01000_00000;
+localparam  S_CONFIG_BIT_D7 = 11'b0_00100_00000;
+localparam  S_CONFIG_BIT_D6 = 11'b0_00010_00000;
+localparam  S_CONFIG_BIT_D5 = 11'b0_00001_00000;
+localparam  S_CONFIG_BIT_D4 = 11'b0_00000_10000;
+localparam  S_CONFIG_BIT_D3 = 11'b0_00000_01000;
+localparam  S_CONFIG_BIT_D2 = 11'b0_00000_00100;
+localparam  S_CONFIG_BIT_D1 = 11'b0_00000_00010;
+localparam  S_CONFIG_BIT_D0 = 11'b0_00000_00001;
+localparam  S_CONFIG_BIT_A2 = 11'b1_00000_00000;
 ////////////////////////////////////////////
 
 // divide clk into xck
@@ -95,65 +118,212 @@ always @(negedge sys_resetn or posedge sys_clock) begin
     end
 end
 
-// camera state machine do nothing if cam_capture is 0
-reg [9:0] main_state;
-reg [2:0] config_state;
-reg [23:0] counter0;
-
+reg [1:0] Last_CLK_Reg;
 always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
-        counter0 <= 0;
-    end else if (Cam_Capture) begin
-        if (main_state == S_IDLE) begin
-            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
-                counter0 <= 24'd0;
-            end
-        end else if (main_state == S_WAIT0) begin
-            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0] && counter0 < 24'd32767) begin
-                counter0 <= counter0 + 24'd1;
-            end
-        end
+        Last_CLK_Reg <= 2'b0;
+    end else begin
+        Last_CLK_Reg[1] <= Last_CLK_Reg[0];
+        Last_CLK_Reg[0] <= Cart_CLK;
     end
 end
 
+// camera state machine do nothing if cam_capture is 0
+reg [10:0] main_state;
+reg [2:0] config_state;
+reg [10:0] config_bit_state;
+reg [23:0] counter0;
+reg [1:0] small_counter;
+reg reset_pulse_send;
+
+reg [18:0] exposure_counter;
+
 always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
+        // internal states
+        counter0 <= 0;
+        exposure_counter <= 0;
         main_state <= S_IDLE;
         config_state <= S_CONFIG_R1;
+        reset_pulse_send <= 0;
+        // outputs
+        Cam_Capture_Finish <= 1'b0;
     end else if (Cam_Capture) begin
-        case (main_state)
-            S_IDLE: begin
-                if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
-                    main_state <= S_WAIT0;
+        case(main_state)
+        S_IDLE: begin
+            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin // sync at posedge of xck
+                main_state <= S_RESET0;
+                Cam_Capture_Finish <= 1'b0;
+            end
+        end
+        S_RESET0: begin
+            // pseudo wait 1clk
+            if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin // set at negedge, reset signal is read at posedge of xck
+                if (!reset_pulse_send) begin
+                    // sens_reset <= 0;
+                    reset_pulse_send <= 1;
                 end else begin
-                    main_state <= S_IDLE;
+                    // sens_reset <= 1;
+                    main_state <= S_CONFIG;
+                    config_state <= S_CONFIG_R1;
+                    config_bit_state <= S_CONFIG_BIT_A1;
+                    // also prepare first bit to configure (A2 of reg1), this also happens in later configure operations
+                    // sens_sin <= a2;
+                    counter0 <= 0;//for debug
                 end
             end
-            S_WAIT0: begin
-                if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
-                    if (counter0 == 24'd32767) begin
-                        main_state <= S_IDLE;
-                    end
-                end else begin
+        end
+        S_CONFIG: begin
+            // data latch at posedge of xck, load latch at negedge of xck
+            // load should be high for at least 0.8us, which is half of xck
+            // we need clk signal to handle this behavior, also recall that xck and clk sync at clk posedge
+            // xck negedge : prepare next bit per config_bit_state, if load pulse set, prepare to reset it at next negedge of clk.
+            // xck posedge : if current bit_state is d0, prepare for load signal at next negedge of clk. Advance bit_state, if S_CONFIG_R0 now, prepare to next main_state.
+            // clk negedge : if load signal need to be set, set it; if load signal was set, reset it. check if need to advance to next main_state.
+            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
+                if (counter0 == 24'd88) begin
                     main_state <= S_WAIT0;
+                end else begin
+                    counter0 <= counter0 + 24'd1;
                 end
             end
-            default: main_state <= S_IDLE;
+        end
+        S_WAIT0: begin
+            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
+                main_state <= S_START;
+            end
+        end
+        S_START: begin
+            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
+                main_state <= S_EXPOSURE;
+                exposure_counter <= 0;
+            end
+        end
+        S_EXPOSURE: begin
+            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
+                if (exposure_counter == exposure_steps_xck) begin
+                    main_state <= S_WAIT1;
+                    small_counter <= 0;
+                end else begin
+                    exposure_counter = exposure_counter + 19'b1;
+                end
+            end
+        end
+        S_WAIT1: begin
+            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
+                if (small_counter == 2'd1) begin
+                    main_state <= S_READ;
+                    //debug
+                    counter0 <= 0;
+                end else begin
+                    small_counter <= 2'd1;
+                end
+            end
+        end
+        S_READ: begin
+            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
+                if (counter0[14:0] == (Nbit ? 15'd16128 : 15'd16384)) begin
+                    main_state <= S_WAIT2;
+                    small_counter <= 0;
+                end else begin
+                    counter0[14:0] = counter0[14:0] + 15'd1;
+                end
+            end
+        end
+        S_WAIT2: begin
+            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
+                if (small_counter == 2'd3) begin
+                    main_state <= S_RESET1;
+                    reset_pulse_send <= 0;
+                end else begin
+                    small_counter <= small_counter + 2'd1;
+                end
+            end
+        end
+        S_RESET1: begin
+            if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin
+                if (!reset_pulse_send) begin
+                    // sens_reset <= 0;
+                    reset_pulse_send <= 1;
+                end else begin
+                    // sens_reset <= 1;
+                    main_state <= S_FINISH;
+                    small_counter <= 0;
+                    Cam_Capture_Finish <= 1'b1;
+                end
+            end
+        end
+        S_FINISH: begin
+            if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin
+                main_state <= S_IDLE;
+            end
+        end
+        default: begin
+            counter0 <= 0;
+            exposure_counter <= 0; 
+            main_state <= S_IDLE;
+            config_state <= S_CONFIG_R1;
+            Cam_Capture_Finish <= 1'b0;
+        end
         endcase
     end
 end
 
-always @(negedge sys_resetn or posedge sys_clock) begin
-    if (!sys_resetn) begin
-        Cam_Capture_Finish <= 1'b0;
-    end else begin
-        if (main_state == S_IDLE && counter0 == 24'd32767) begin
-            Cam_Capture_Finish <= 1'b1;
-        end else begin
-            Cam_Capture_Finish <= 1'b0;
-        end
-    end
-end
+
+// always @(negedge sys_resetn or posedge sys_clock) begin
+//     if (!sys_resetn) begin
+//         counter0 <= 0;
+//     end else if (Cam_Capture) begin
+//         if (main_state == S_IDLE) begin
+//             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
+//                 counter0 <= 24'd0;
+//             end
+//         end else if (main_state == S_WAIT0) begin
+//             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0] && counter0 < 24'd32767) begin
+//                 counter0 <= counter0 + 24'd1;
+//             end
+//         end
+//     end
+// end
+
+// always @(negedge sys_resetn or posedge sys_clock) begin
+//     if (!sys_resetn) begin
+//         main_state <= S_IDLE;
+//         config_state <= S_CONFIG_R1;
+//     end else if (Cam_Capture) begin
+//         case (main_state)
+//             S_IDLE: begin
+//                 if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
+//                     main_state <= S_WAIT0;
+//                 end else begin
+//                     main_state <= S_IDLE;
+//                 end
+//             end
+//             S_WAIT0: begin
+//                 if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
+//                     if (counter0 == 24'd32767) begin
+//                         main_state <= S_IDLE;
+//                     end
+//                 end else begin
+//                     main_state <= S_WAIT0;
+//                 end
+//             end
+//             default: main_state <= S_IDLE;
+//         endcase
+//     end
+// end
+
+// always @(negedge sys_resetn or posedge sys_clock) begin
+//     if (!sys_resetn) begin
+//         Cam_Capture_Finish <= 1'b0;
+//     end else begin
+//         if (main_state == S_IDLE && counter0 == 24'd32767) begin
+//             Cam_Capture_Finish <= 1'b1;
+//         end else begin
+//             Cam_Capture_Finish <= 1'b0;
+//         end
+//     end
+// end
 
 endmodule
 `default_nettype wire

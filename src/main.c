@@ -8,16 +8,6 @@ int main(void)
     SYS_DisableNJTRST();
     SYS_DisableJTDI();
     SYS_DisableJTDO();
-
-    UTIL_IdleMs(10);
-
-    INT_Init(); // This will disabe all interrupts. INT_EnableIRQ should be called after this to enable any external interrupt.
-    INT_EnableIntGlobal();
-    INT_EnableIntExternal();
-
-    while(1)
-    {
-        SYS_EnterSleepMode();
-    }
+    while(1){}
     return 0;
 }

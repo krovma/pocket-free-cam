@@ -668,8 +668,12 @@ set_global_assignment -name VERILOG_FILE ag32gbd_ip.v
 set_global_assignment -name VERILOG_FILE "C:\\Users\\krovma\\.platformio\\packages\\tool-agrv_logic\\etc\\arch\\rodinia\\alta_sim.v"
 set_global_assignment -name SDC_FILE .\\gbd.sdc
 set_global_assignment -name QIP_FILE block_ram.qip
+set_global_assignment -name PARTITION_COLOR 52377 -section_id macro_inst_analog_ip_inst_gen_per_0__gen_adc_adc_inst_adc_inst -tag alta_auto
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id macro_inst_analog_ip_inst_gen_per_0__gen_adc_adc_inst_adc_inst -tag alta_auto
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id macro_inst_analog_ip_inst_gen_per_0__gen_adc_adc_inst_adc_inst -tag alta_auto
 set_global_assignment -name PARTITION_COLOR 52377 -section_id rv32 -tag alta_auto
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id rv32 -tag alta_auto
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id rv32 -tag alta_auto
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY macro_inst_analog_ip_inst_gen_per_0__gen_adc_adc_inst_adc_inst -to "ag32gbd_ip:macro_inst|analog_ip:analog_ip_inst|apb_adc:gen_per[0].gen_adc.adc_inst|alta_adc:adc_inst" -section_id macro_inst_analog_ip_inst_gen_per_0__gen_adc_adc_inst_adc_inst
 set_instance_assignment -name PARTITION_HIERARCHY rv32 -to "alta_rv32:rv32" -section_id rv32

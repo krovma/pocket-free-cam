@@ -1,6 +1,7 @@
 `default_nettype none
 `timescale 1ps/1ps
 module ag32gbd_ip (
+    ////////// GBD //////////////
     input              cart_CLK,
     inout       [15:0] cart_a,
     inout       [7:0]  cart_d,
@@ -20,6 +21,8 @@ module ag32gbd_ip (
     output tri0        sens_sin,
     output tri0        sens_start,
     output tri0        sens_xck,
+
+    ////////// AG32 //////////////
     input              sys_clock,
     input              bus_clock,
     input              resetn,
@@ -55,41 +58,60 @@ module ag32gbd_ip (
 );
 
 // BEGIN Instantiate ADC
-// analog_ip analog_ip_inst(
-//     .stop                       (stop),
-//     .sys_clock                  (sys_clock),
-//     .bus_clock                  (bus_clock),
-//     .resetn                     (resetn),
-//     .mem_ahb_htrans             (mem_ahb_htrans),
-//     .mem_ahb_hready             (mem_ahb_hready),
-//     .mem_ahb_hwrite             (mem_ahb_hwrite),
-//     .mem_ahb_haddr              (mem_ahb_haddr),
-//     .mem_ahb_hsize              (mem_ahb_hsize),
-//     .mem_ahb_hburst             (mem_ahb_hburst[2:0]),
-//     .mem_ahb_hwdata             (mem_ahb_hwdata[31:0]),
-//     .mem_ahb_hreadyout          (mem_ahb_hreadyout),
-//     .mem_ahb_hresp              (mem_ahb_hresp),
-//     .mem_ahb_hrdata             (mem_ahb_hrdata[31:0]),
-//     .slave_ahb_hsel             (slave_ahb_hsel),
-//     .slave_ahb_hready           (slave_ahb_hready),
-//     .slave_ahb_hreadyout        (slave_ahb_hreadyout),
-//     .slave_ahb_htrans           (slave_ahb_htrans[1:0]),
-//     .slave_ahb_hsize            (slave_ahb_hsize[2:0]),
-//     .slave_ahb_hburst           (slave_ahb_hburst[2:0]),
-//     .slave_ahb_hwrite           (slave_ahb_hwrite),
-//     .slave_ahb_haddr            (slave_ahb_haddr[31:0]),
-//     .slave_ahb_hwdata           (slave_ahb_hwdata[31:0]),
-//     .slave_ahb_hresp            (slave_ahb_hresp),
-//     .slave_ahb_hrdata           (slave_ahb_hrdata[31:0]),
-//     .ext_dma_DMACBREQ           (ext_dma_DMACBREQ[3:0]),
-//     .ext_dma_DMACLBREQ          (ext_dma_DMACLBREQ[3:0]),
-//     .ext_dma_DMACSREQ           (ext_dma_DMACSREQ[3:0]),
-//     .ext_dma_DMACLSREQ          (ext_dma_DMACLSREQ[3:0]),
-//     .ext_dma_DMACCLR            (ext_dma_DMACCLR[3:0]),
-//     .ext_dma_DMACTC             (ext_dma_DMACTC[3:0]),
-//     .local_int                  (local_int[3:0])
-// );
+analog_ip analog_ip_inst(
+    .stop                       (stop),
+    .sys_clock                  (sys_clock),
+    .bus_clock                  (bus_clock),
+    .resetn                     (resetn),
+    .mem_ahb_htrans             (mem_ahb_htrans),
+    .mem_ahb_hready             (mem_ahb_hready),
+    .mem_ahb_hwrite             (mem_ahb_hwrite),
+    .mem_ahb_haddr              (mem_ahb_haddr),
+    .mem_ahb_hsize              (mem_ahb_hsize),
+    .mem_ahb_hburst             (mem_ahb_hburst[2:0]),
+    .mem_ahb_hwdata             (mem_ahb_hwdata[31:0]),
+    .mem_ahb_hreadyout          (mem_ahb_hreadyout),
+    .mem_ahb_hresp              (mem_ahb_hresp),
+    .mem_ahb_hrdata             (mem_ahb_hrdata[31:0]),
+    .slave_ahb_hsel             (slave_ahb_hsel),
+    .slave_ahb_hready           (slave_ahb_hready),
+    .slave_ahb_hreadyout        (slave_ahb_hreadyout),
+    .slave_ahb_htrans           (slave_ahb_htrans[1:0]),
+    .slave_ahb_hsize            (slave_ahb_hsize[2:0]),
+    .slave_ahb_hburst           (slave_ahb_hburst[2:0]),
+    .slave_ahb_hwrite           (slave_ahb_hwrite),
+    .slave_ahb_haddr            (slave_ahb_haddr[31:0]),
+    .slave_ahb_hwdata           (slave_ahb_hwdata[31:0]),
+    .slave_ahb_hresp            (slave_ahb_hresp),
+    .slave_ahb_hrdata           (slave_ahb_hrdata[31:0]),
+    .ext_dma_DMACBREQ           (ext_dma_DMACBREQ[3:0]),
+    .ext_dma_DMACLBREQ          (ext_dma_DMACLBREQ[3:0]),
+    .ext_dma_DMACSREQ           (ext_dma_DMACSREQ[3:0]),
+    .ext_dma_DMACLSREQ          (ext_dma_DMACLSREQ[3:0]),
+    .ext_dma_DMACCLR            (ext_dma_DMACCLR[3:0]),
+    .ext_dma_DMACTC             (ext_dma_DMACTC[3:0]),
+    .local_int                  (local_int[3:0])
+);
 // END Instantiate ADC
+
+// clock debug
+reg sys_clock_x10;
+reg [9:0] clk_counter;
+always @(posedge sys_clock or negedge resetn) begin
+    if (!resetn) begin
+        sys_clock_x10 <= 0;
+        clk_counter <= 10'd5;
+    end else begin
+        if (clk_counter == 10'd5) begin
+            sys_clock_x10 <= ~sys_clock_x10;
+            clk_counter <= 10'd0;
+        end else begin
+            clk_counter <= clk_counter + 10'd1;
+        end
+    end
+end
+
+assign sens_start = sys_clock_x10;
 
 
 ///////////////////
@@ -138,7 +160,6 @@ ag32gbd_rom gbdrom(
     .Cart_a(cart_a),
     .Cart_d(cart_d),
     .Cart_nWR(cart_nWR),
-    //.Cart_nCS(cart_nCS),
 
     .sys_resetn(resetn),
     .sys_clock(sys_clock),
@@ -271,6 +292,12 @@ ag32gbd_reg gbdreg(
 ag32gbd_cam gbdcam(
     .Cam_Capture(Flag_CamCapture),
     .Cart_CLK(cart_CLK),
+    .Reg_A000(Reg_A000),
+    .Reg_A001(Reg_A001),
+    .Reg_A002(Reg_A002),
+    .Reg_A003(Reg_A003),
+    .Reg_A004(Reg_A004),
+    .Reg_A005(Reg_A005),
 
     .sys_clock(sys_clock),
     .sys_resetn(resetn),
@@ -280,7 +307,8 @@ ag32gbd_cam gbdcam(
 );
 
 assign sens_read = Flag_CamCapture;
-// assign sens_xck = sys_clock;
+assign sens_sin = Flag_CamCaptureFinish;
+
 // assign sens_start = bus_clock;
 
 
