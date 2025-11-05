@@ -1,8 +1,7 @@
 # pio_begin  >>>>>> DO NOT MODIFY THIS SECTION! >>>>>>
-set BOARD_PLL_CLKIN PIN_OSC_in
+set BOARD_PLL_CLKIN PIN_OSC
 set db_io_name_priority False
 set ip_pll_vco_lowpower true
 set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION "ON"
 # pio_end    <<<<<< DO NOT MODIFY THIS SECTION! <<<<<<
-##
 

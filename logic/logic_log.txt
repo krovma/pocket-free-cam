@@ -34,14 +34,14 @@
 > if { ! [info exists LIB_DIRS] } {
   set LIB_DIRS {.}
 }
-> if { ! [info exists LOGIC_ASF] } {
-  set LOGIC_ASF ""
+> if { ! [info exists BOARD_ASF] } {
+  set BOARD_ASF ""
 }
-> if { ! [info exists LOGIC_PRE] } {
-  set LOGIC_PRE ""
+> if { ! [info exists BOARD_PRE] } {
+  set BOARD_PRE ""
 }
-> if { ! [info exists LOGIC_POST] } {
-  set LOGIC_POST ""
+> if { ! [info exists BOARD_POST] } {
+  set BOARD_POST ""
 }
 > if { ! [info exists DESIGN_ASF] } {
   set DESIGN_ASF ""
@@ -61,8 +61,8 @@
 > if { ! [info exists VEX_FILE] } {
   set VEX_FILE ""
 }
-> if { ! [info exists AGF_FILE] } {
-  set AGF_FILE ""
+> if { ! [info exists ATF_FILE] } {
+  set ATF_FILE ""
 }
 > if { ! [info exists LOGIC_COMPRESS] } {
   set LOGIC_COMPRESS false
@@ -152,9 +152,9 @@
   set is_pio false
   set skip_empty false
   while { [gets $fp line] >= 0 } {
-    if { [string first "pio_begin" $line] >= 0 } {
+    if { [string first "# pio_begin" $line] == 0 } {
       set is_pio true
-    } elseif { [string first "pio_end" $line] >= 0 } {
+    } elseif { [string first "# pio_end" $line] == 0 } {
       set is_pio false
       set skip_empty true
     } elseif { ! $is_pio } {
@@ -172,6 +172,7 @@
 > set hx_fp [open $logic_hx r]
 > set hsi_freq 0
 > set hse_freq 0
+> set osc_freq 0
 > set sys_freq 0
 > set bus_freq 0
 > while { [gets $hx_fp line] >= 0 } {
@@ -181,6 +182,8 @@
       set hsi_freq [lindex $words 2]
     } elseif { [lindex $words 1] == "BOARD_HSE_FREQUENCY" } {
       set hse_freq [lindex $words 2]
+    } elseif { [lindex $words 1] == "BOARD_OSC_FREQUENCY" } {
+      set osc_freq [lindex $words 2]
     } elseif { [lindex $words 1] == "BOARD_PLL_FREQUENCY" } {
       set sys_freq [lindex $words 2]
     } elseif { [lindex $words 1] == "BOARD_BUS_FREQUENCY" } {
@@ -224,7 +227,7 @@ Warn: Files for LOGIC preparation already exist in logic.
 > if { $skip_setup < 3 } {
   backup_files $keep_files
   load_architect -no_work -no_route -type $LOGIC_DEVICE
-  if { ${SDC_FILE} == "" && ${AGF_FILE} == "" && ${VEX_FILE} == "" } {
+  if { ${SDC_FILE} == "" && ${ATF_FILE} == "" && ${VEX_FILE} == "" } {
     alta::setupRun ${LOGIC_DESIGN} ${LOGIC_MODULE} \
                    "${IP_FILES}" \
                    "${VERILOG_FILES}" \
@@ -256,7 +259,7 @@ Warn: Files for LOGIC preparation already exist in logic.
                    "." "${ORIGINAL_DIR}" "${ORIGINAL_OUTPUT}"\
                    "${ORIGINAL_QSF}" "${ORIGINAL_PIN}" \
                    "${GCLK_CNT}" "${USE_DESIGN_TEMPL}" \
-                   "${SDC_FILE}" "${AGF_FILE}" "${VEX_FILE}"
+                   "${SDC_FILE}" "${ATF_FILE}" "${VEX_FILE}"
   }
   if { true } {
     set proj_fp [open $supra_proj w]
@@ -316,10 +319,18 @@ Warn: Files for LOGIC preparation already exist in logic.
       puts $sdc_fp "create_clock -name PIN_HSE -period \$::HSE_PERIOD \[get_ports PIN_HSE\]"
       puts $sdc_fp "set_clock_groups -asynchronous -group PIN_HSE"
     }
+    if { $osc_freq != 0 } {
+      set osc_period [expr 1000000000.0/$osc_freq]
+      puts $sdc_fp "if { ! \[info exists ::OSC_PERIOD\] } {"
+      puts $sdc_fp "  set ::OSC_PERIOD $osc_period"
+      puts $sdc_fp "}"
+      puts $sdc_fp "create_clock -name PIN_OSC -period \$::OSC_PERIOD \[get_ports PIN_OSC\]"
+      puts $sdc_fp "set_clock_groups -asynchronous -group PIN_OSC"
+    }
     puts $sdc_fp "derive_pll_clocks -create_base_clocks"
     puts $sdc_fp "set_false_path -from rv32|resetn_out"
     puts $sdc_fp "# pio_end"
-    puts $sdc_fp "##\n"
+    puts $sdc_fp ""
     foreach line $sdc_lines {
       puts $sdc_fp $line
     }
@@ -340,7 +351,7 @@ Warn: Files for LOGIC preparation already exist in logic.
     }
     puts $sdc_fp "set_false_path -from resetn"
     puts $sdc_fp "# pio_end"
-    puts $sdc_fp "##\n"
+    puts $sdc_fp ""
     foreach line $sdc_lines {
       puts $sdc_fp $line
     }
@@ -353,7 +364,7 @@ Warn: Files for LOGIC preparation already exist in logic.
     puts $qsf_fp "# pio_begin  >>>>>> DO NOT MODIFY THIS SECTION! >>>>>>"
     puts $qsf_fp "set_instance_assignment -name VIRTUAL_PIN ON -to *"
     puts $qsf_fp "# pio_end    <<<<<< DO NOT MODIFY THIS SECTION! <<<<<<"
-    puts $qsf_fp "##\n"
+    puts $qsf_fp ""
     foreach line $qsf_lines {
       puts $qsf_fp $line
     }
@@ -368,7 +379,7 @@ Warn: Files for LOGIC preparation already exist in logic.
     puts $run_fp "  set FLOW PACK"
     puts $run_fp "}"
     puts $run_fp "# pio_end    <<<<<< DO NOT MODIFY THIS SECTION! <<<<<<"
-    puts $run_fp "##\n"
+    puts $run_fp ""
     foreach line $run_lines {
       puts $run_fp $line
     }
@@ -383,7 +394,7 @@ Warn: Files for LOGIC preparation already exist in logic.
       puts $map_fp "set IOPAD true"
     }
     puts $map_fp "# pio_end    <<<<<< DO NOT MODIFY THIS SECTION! <<<<<<"
-    puts $map_fp "##\n"
+    puts $map_fp ""
     foreach line $map_lines {
       puts $map_fp $line
     }
@@ -391,13 +402,13 @@ Warn: Files for LOGIC preparation already exist in logic.
   }
 
   if { true } {
-    set pre_asf ${LOGIC_DESIGN}.pre.asf
-    set pre_lines [read_file $pre_asf]
-    set pre_fp [open $pre_asf w]
+    set logic_pre ${LOGIC_DESIGN}.pre.asf
+    set pre_lines [read_file $logic_pre]
+    set pre_fp [open $logic_pre w]
     puts $pre_fp "# pio_begin  >>>>>> DO NOT MODIFY THIS SECTION! >>>>>>"
-    if { "$LOGIC_PRE" != "" } {
-      set logic_fp [open $LOGIC_PRE r]; set logic_data [read $logic_fp]; close $logic_fp
-      print_fdata $pre_fp $logic_data
+    if { "$BOARD_PRE" != "" } {
+      set board_fp [open $BOARD_PRE r]; set board_data [read $board_fp]; close $board_fp
+      print_fdata $pre_fp $board_data
     }
     if { !$logic_ip } {
       if { [info exists BOARD_PLL_CLKIN] } {
@@ -419,7 +430,7 @@ Warn: Files for LOGIC preparation already exist in logic.
       print_fdata $pre_fp $design_data
     }
     puts $pre_fp "# pio_end    <<<<<< DO NOT MODIFY THIS SECTION! <<<<<<"
-    puts $pre_fp "##\n"
+    puts $pre_fp ""
     foreach line $pre_lines {
       puts $pre_fp $line
     }
@@ -427,20 +438,20 @@ Warn: Files for LOGIC preparation already exist in logic.
   }
  
   if { true } {
-    set asf_asf ${LOGIC_DESIGN}.asf
-    set asf_lines [read_file $asf_asf]
-    set asf_fp [open $asf_asf w]
+    set logic_asf ${LOGIC_DESIGN}.asf
+    set asf_lines [read_file $logic_asf]
+    set asf_fp [open $logic_asf w]
     puts $asf_fp "# pio_begin  >>>>>> DO NOT MODIFY THIS SECTION! >>>>>>"
-    if { "$LOGIC_ASF" != "" } {
-      set logic_fp [open $LOGIC_ASF r]; set logic_data [read $logic_fp]; close $logic_fp
-      print_fdata $asf_fp $logic_data
+    if { "$BOARD_ASF" != "" } {
+      set board_fp [open $BOARD_ASF r]; set board_data [read $board_fp]; close $board_fp
+      print_fdata $asf_fp $board_data
     }
     if { "$DESIGN_ASF" != "" } {
       set design_fp [open $DESIGN_ASF r]; set design_data [read $design_fp]; close $design_fp
       print_fdata $asf_fp $design_data
     }
     puts $asf_fp "# pio_end    <<<<<< DO NOT MODIFY THIS SECTION! <<<<<<"
-    puts $asf_fp "##\n"
+    puts $asf_fp ""
     foreach line $asf_lines {
       puts $asf_fp $line
     }
@@ -448,13 +459,13 @@ Warn: Files for LOGIC preparation already exist in logic.
   }
 
   if { true } {
-    set post_asf ${LOGIC_DESIGN}.post.asf
-    set post_lines [read_file $post_asf]
-    set post_fp [open $post_asf w]
+    set logic_post ${LOGIC_DESIGN}.post.asf
+    set post_lines [read_file $logic_post]
+    set post_fp [open $logic_post w]
     puts $post_fp "# pio_begin  >>>>>> DO NOT MODIFY THIS SECTION! >>>>>>"
-    if { "$LOGIC_POST" != "" } {
-      set logic_fp [open $LOGIC_POST r]; set logic_data [read $logic_fp]; close $logic_fp
-      print_fdata $post_fp $logic_data
+    if { "$BOARD_POST" != "" } {
+      set board_fp [open $BOARD_POST r]; set board_data [read $board_fp]; close $board_fp
+      print_fdata $post_fp $board_data
     }
     if { $logic_ip } {
       puts $post_fp "file mkdir $IP_INSTALL_DIR"
@@ -473,7 +484,7 @@ Warn: Files for LOGIC preparation already exist in logic.
       print_fdata $post_fp $design_data
     }
     puts $post_fp "# pio_end    <<<<<< DO NOT MODIFY THIS SECTION! <<<<<<"
-    puts $post_fp "##\n"
+    puts $post_fp ""
     foreach line $post_lines {
       puts $post_fp $line
     }
@@ -481,12 +492,12 @@ Warn: Files for LOGIC preparation already exist in logic.
   }
 
   if { true } {
-    set pre_asf ${LOGIC_DESIGN}.pre_map.asf
-    set pre_lines [read_file $pre_asf]
-    set pre_fp [open $pre_asf w]
+    set logic_pre ${LOGIC_DESIGN}.pre_map.asf
+    set pre_lines [read_file $logic_pre]
+    set pre_fp [open $logic_pre w]
     puts $pre_fp "# pio_begin  >>>>>> DO NOT MODIFY THIS SECTION! >>>>>>"
     puts $pre_fp "# pio_end    <<<<<< DO NOT MODIFY THIS SECTION! <<<<<<"
-    puts $pre_fp "##\n"
+    puts $pre_fp ""
     foreach line $pre_lines {
       puts $pre_fp $line
     }
@@ -494,12 +505,12 @@ Warn: Files for LOGIC preparation already exist in logic.
   }
  
   if { true } {
-    set post_asf ${LOGIC_DESIGN}.post_map.asf
-    set post_lines [read_file $post_asf]
-    set post_fp [open $post_asf w]
+    set logic_post ${LOGIC_DESIGN}.post_map.asf
+    set post_lines [read_file $logic_post]
+    set post_fp [open $logic_post w]
     puts $post_fp "# pio_begin  >>>>>> DO NOT MODIFY THIS SECTION! >>>>>>"
     puts $post_fp "# pio_end    <<<<<< DO NOT MODIFY THIS SECTION! <<<<<<"
-    puts $post_fp "##\n"
+    puts $post_fp ""
     foreach line $post_lines {
       puts $post_fp $line
     }
@@ -512,7 +523,7 @@ Total Pin : 128/17
 Top array is built.
 Loading architect libraries...
 ## CPU time: 0:0:0, REAL time: 0:0:0
-## Memory Usage: 52MB (52MB)
+## Memory Usage: 53MB (53MB)
 Info: Using device QSF template file C:/Users/krovma/.platformio/packages/tool-agrv_logic/etc/AGRV2K_templ.qsf.
 > 
 > exit

@@ -4,9 +4,9 @@ device=AGRV2KL100
 flowInline=force
 
 [GuiMigrateRunPage]
-fitting=1
-fitter=5
-effort=2
+fitting=6
+fitter=4
+effort=3
 skew=2
 isMC=false
 count=

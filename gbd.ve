@@ -1,14 +1,11 @@
-SYSCLK 150
-BUSCLK 50
-PLL_CLKIN PIN_OSC # Use internal clock @150MHz
-# PLLCLK4 10
-
+SYSCLK 100
+BUSCLK 25
+PLL_CLKIN PIN_OSC # Use internal clock @100MHz
 
 #####################
 # MCU 
 #####################
 GPIO1_0 PIN_42 # saved for extension
-
 
 #####################
 # MCU <-> CPLD 

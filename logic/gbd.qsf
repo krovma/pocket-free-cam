@@ -6,7 +6,11 @@ set_global_assignment -name DEVICE EP4CE75F29C8
 set_global_assignment -name TOP_LEVEL_ENTITY "gbd"
 set_global_assignment -name SEARCH_PATH ag32gbd_ip
 
+set_global_assignment -name VERILOG_FILE gbd.v
+set_global_assignment -name VERILOG_FILE ag32gbd_ip.v
+set_global_assignment -name VERILOG_FILE "C:\\Users\\krovma\\.platformio\\packages\\tool-agrv_logic\\etc\\arch\\rodinia\\alta_sim.v"
 
+set_global_assignment -name SDC_FILE .\\gbd.sdc
 
 
 #set_global_assignment -name LOGICLOCK_INCREMENTAL_COMPILE_FILE "atom_netlists/__design_name__.vqm"
@@ -652,28 +656,13 @@ set_location_assignment LCCOMB_X58_Y5_N6 -to resetn_out
 
 set_instance_assignment -name GLOBAL_SIGNAL GLOBAL_CLOCK -to sys_resetn
 
-set_global_assignment -name EDA_MAINTAIN_DESIGN_HIERARCHY PARTITION_ONLY -section_id eda_simulation
-set_global_assignment -name VERILOG_FILE block_ram.v
-set_global_assignment -name VERILOG_FILE analog_ip.v
-set_global_assignment -name VERILOG_FILE ahb2apb.v
-set_global_assignment -name VERILOG_FILE ag32gbd_rom.v
-set_global_assignment -name VERILOG_FILE ag32gbd_reg.v
-set_global_assignment -name VERILOG_FILE ag32gbd_ram_write.v
-set_global_assignment -name VERILOG_FILE ag32gbd_ram.v
-set_global_assignment -name VERILOG_FILE ag32gbd_ip_tb.v
-set_global_assignment -name VERILOG_FILE ag32gbd_cam.v
-set_global_assignment -name VERILOG_FILE ag32gbd_bram_ctrl.v
-set_global_assignment -name VERILOG_FILE gbd.v
-set_global_assignment -name VERILOG_FILE ag32gbd_ip.v
-set_global_assignment -name VERILOG_FILE "C:\\Users\\krovma\\.platformio\\packages\\tool-agrv_logic\\etc\\arch\\rodinia\\alta_sim.v"
-set_global_assignment -name SDC_FILE .\\gbd.sdc
-set_global_assignment -name QIP_FILE block_ram.qip
 set_global_assignment -name PARTITION_COLOR 52377 -section_id macro_inst_analog_ip_inst_gen_per_0__gen_adc_adc_inst_adc_inst -tag alta_auto
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id macro_inst_analog_ip_inst_gen_per_0__gen_adc_adc_inst_adc_inst -tag alta_auto
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id macro_inst_analog_ip_inst_gen_per_0__gen_adc_adc_inst_adc_inst -tag alta_auto
 set_global_assignment -name PARTITION_COLOR 52377 -section_id rv32 -tag alta_auto
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id rv32 -tag alta_auto
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id rv32 -tag alta_auto
+set_global_assignment -name EDA_MAINTAIN_DESIGN_HIERARCHY PARTITION_ONLY -section_id eda_simulation
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_instance_assignment -name PARTITION_HIERARCHY macro_inst_analog_ip_inst_gen_per_0__gen_adc_adc_inst_adc_inst -to "ag32gbd_ip:macro_inst|analog_ip:analog_ip_inst|apb_adc:gen_per[0].gen_adc.adc_inst|alta_adc:adc_inst" -section_id macro_inst_analog_ip_inst_gen_per_0__gen_adc_adc_inst_adc_inst
 set_instance_assignment -name PARTITION_HIERARCHY rv32 -to "alta_rv32:rv32" -section_id rv32
