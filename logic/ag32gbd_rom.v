@@ -24,8 +24,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
         last_nWR <= 2'b11;
     end else begin 
-        last_nWR[1] <= last_nWR[0];
-        last_nWR[0] <= Cart_nWR;
+        last_nWR[1:0] <= {last_nWR[0], Cart_nWR};
     end
 end
 

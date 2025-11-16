@@ -10,7 +10,7 @@ int main(void)
     SYS_DisableNJTRST();
     SYS_DisableJTDI();
     SYS_DisableJTDO();
-    //SYS_EnterSleepMode();
+
     while(1){
     }
     return 0;

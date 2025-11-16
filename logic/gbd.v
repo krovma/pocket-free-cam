@@ -3,59 +3,57 @@
 `timescale 1 ps/ 1 ps
 
 module gbd (
-  GPIO1_0,
   PIN_HSE,
   PIN_HSI,
   PLL_CLKIN,
-  cart_CLK,
-  cart_a,
-  cart_d,
-  cart_nCS,
-  cart_nRD,
-  cart_nRST,
-  cart_nWR,
-  ram_a,
-  ram_ce2,
-  ram_nCS,
-  ram_nWE,
-  rom_a,
-  rom_nCS,
-  sens_load,
-  sens_read,
-  sens_reset,
-  sens_sin,
-  sens_start,
-  sens_xck
+  top_A,
+  top_CLK,
+  top_D,
+  top_RAM_A,
+  top_RAM_DQ,
+  top_RAM_nCS,
+  top_RAM_nRD,
+  top_RAM_nWE,
+  top_ROM_A,
+  top_ROM_nCS,
+  top_SENS_LOAD,
+  top_SENS_READ,
+  top_SENS_RESET,
+  top_SENS_SIN,
+  top_SENS_START,
+  top_SENS_XCK,
+  top_nCS,
+  top_nLED_RAMIO,
+  top_nLED_REC,
+  top_nRD,
+  top_nRST,
+  top_nWR
 );
-inout         GPIO1_0;
 input         PIN_HSE;
 input         PIN_HSI;
 input         PLL_CLKIN;
-input         cart_CLK;
-inout  [15:0] cart_a;
-inout  [7:0]  cart_d;
-input         cart_nCS;
-input         cart_nRD;
-output        cart_nRST;
-input         cart_nWR;
-output [16:13] ram_a;
-output        ram_ce2;
-output        ram_nCS;
-output        ram_nWE;
-output [22:14] rom_a;
-output        rom_nCS;
-output        sens_load;
-output        sens_read;
-output        sens_reset;
-output        sens_sin;
-output        sens_start;
-output        sens_xck;
-
-// GPIO1_0, GPIO1_0
-assign PIN_42_in = GPIO1_0;
-wire PIN_42_out_en;
-wire PIN_42_out_data;
-assign GPIO1_0 = PIN_42_out_en ? PIN_42_out_data : 1'bz;
+input  [15:0] top_A;
+input         top_CLK;
+inout  [7:0]  top_D;
+output [16:0] top_RAM_A;
+inout  [7:0]  top_RAM_DQ;
+output        top_RAM_nCS;
+output        top_RAM_nRD;
+output        top_RAM_nWE;
+output [22:14] top_ROM_A;
+output        top_ROM_nCS;
+output        top_SENS_LOAD;
+output        top_SENS_READ;
+output        top_SENS_RESET;
+output        top_SENS_SIN;
+output        top_SENS_START;
+output        top_SENS_XCK;
+input         top_nCS;
+output        top_nLED_RAMIO;
+output        top_nLED_REC;
+input         top_nRD;
+output        top_nRST;
+input         top_nWR;
 
 // PIN_HSE
 assign PIN_HSE_in = PIN_HSE;
@@ -267,68 +265,69 @@ wire [3:0]  ext_dma_DMACTC;
 wire [3:0]  local_int;
 
 ag32gbd_ip macro_inst(
-  .cart_CLK           (cart_CLK                                                                                                                                                                              ),
-  .cart_a             ({cart_a[15], cart_a[14], cart_a[13], cart_a[12], cart_a[11], cart_a[10], cart_a[9], cart_a[8], cart_a[7], cart_a[6], cart_a[5], cart_a[4], cart_a[3], cart_a[2], cart_a[1], cart_a[0]}),
-  .cart_d             ({cart_d[7], cart_d[6], cart_d[5], cart_d[4], cart_d[3], cart_d[2], cart_d[1], cart_d[0]}                                                                                              ),
-  .cart_nCS           (cart_nCS                                                                                                                                                                              ),
-  .cart_nRD           (cart_nRD                                                                                                                                                                              ),
-  .cart_nRST          (cart_nRST                                                                                                                                                                             ),
-  .cart_nWR           (cart_nWR                                                                                                                                                                              ),
-  .ram_a              ({ram_a[16], ram_a[15], ram_a[14], ram_a[13]}                                                                                                                                          ),
-  .ram_ce2            (ram_ce2                                                                                                                                                                               ),
-  .ram_nCS            (ram_nCS                                                                                                                                                                               ),
-  .ram_nWE            (ram_nWE                                                                                                                                                                               ),
-  .rom_a              ({rom_a[22], rom_a[21], rom_a[20], rom_a[19], rom_a[18], rom_a[17], rom_a[16], rom_a[15], rom_a[14]}                                                                                   ),
-  .rom_nCS            (rom_nCS                                                                                                                                                                               ),
-  .sens_load          (sens_load                                                                                                                                                                             ),
-  .sens_read          (sens_read                                                                                                                                                                             ),
-  .sens_reset         (sens_reset                                                                                                                                                                            ),
-  .sens_sin           (sens_sin                                                                                                                                                                              ),
-  .sens_start         (sens_start                                                                                                                                                                            ),
-  .sens_xck           (sens_xck                                                                                                                                                                              ),
-  .sys_clock          (sys_gck                                                                                                                                                                               ),
-  .bus_clock          (bus_clk                                                                                                                                                                               ),
-  .resetn             (sys_resetn                                                                                                                                                                            ),
-  .stop               (sys_ctrl_stop                                                                                                                                                                         ),
-  .mem_ahb_htrans     (mem_ahb_htrans                                                                                                                                                                        ),
-  .mem_ahb_hready     (mem_ahb_hready                                                                                                                                                                        ),
-  .mem_ahb_hwrite     (mem_ahb_hwrite                                                                                                                                                                        ),
-  .mem_ahb_haddr      (mem_ahb_haddr                                                                                                                                                                         ),
-  .mem_ahb_hsize      (mem_ahb_hsize                                                                                                                                                                         ),
-  .mem_ahb_hburst     (mem_ahb_hburst                                                                                                                                                                        ),
-  .mem_ahb_hwdata     (mem_ahb_hwdata                                                                                                                                                                        ),
-  .mem_ahb_hreadyout  (mem_ahb_hreadyout                                                                                                                                                                     ),
-  .mem_ahb_hresp      (mem_ahb_hresp                                                                                                                                                                         ),
-  .mem_ahb_hrdata     (mem_ahb_hrdata                                                                                                                                                                        ),
-  .slave_ahb_hsel     (slave_ahb_hsel                                                                                                                                                                        ),
-  .slave_ahb_hready   (slave_ahb_hready                                                                                                                                                                      ),
-  .slave_ahb_hreadyout(slave_ahb_hreadyout                                                                                                                                                                   ),
-  .slave_ahb_htrans   (slave_ahb_htrans                                                                                                                                                                      ),
-  .slave_ahb_hsize    (slave_ahb_hsize                                                                                                                                                                       ),
-  .slave_ahb_hburst   (slave_ahb_hburst                                                                                                                                                                      ),
-  .slave_ahb_hwrite   (slave_ahb_hwrite                                                                                                                                                                      ),
-  .slave_ahb_haddr    (slave_ahb_haddr                                                                                                                                                                       ),
-  .slave_ahb_hwdata   (slave_ahb_hwdata                                                                                                                                                                      ),
-  .slave_ahb_hresp    (slave_ahb_hresp                                                                                                                                                                       ),
-  .slave_ahb_hrdata   (slave_ahb_hrdata                                                                                                                                                                      ),
-  .ext_dma_DMACBREQ   (ext_dma_DMACBREQ                                                                                                                                                                      ),
-  .ext_dma_DMACLBREQ  (ext_dma_DMACLBREQ                                                                                                                                                                     ),
-  .ext_dma_DMACSREQ   (ext_dma_DMACSREQ                                                                                                                                                                      ),
-  .ext_dma_DMACLSREQ  (ext_dma_DMACLSREQ                                                                                                                                                                     ),
-  .ext_dma_DMACCLR    (ext_dma_DMACCLR                                                                                                                                                                       ),
-  .ext_dma_DMACTC     (ext_dma_DMACTC                                                                                                                                                                        ),
-  .local_int          (local_int                                                                                                                                                                             )
+  .top_A              ({top_A[15], top_A[14], top_A[13], top_A[12], top_A[11], top_A[10], top_A[9], top_A[8], top_A[7], top_A[6], top_A[5], top_A[4], top_A[3], top_A[2], top_A[1], top_A[0]}                                                                               ),
+  .top_CLK            (top_CLK                                                                                                                                                                                                                                              ),
+  .top_D              ({top_D[7], top_D[6], top_D[5], top_D[4], top_D[3], top_D[2], top_D[1], top_D[0]}                                                                                                                                                                     ),
+  .top_RAM_A          ({top_RAM_A[16], top_RAM_A[15], top_RAM_A[14], top_RAM_A[13], top_RAM_A[12], top_RAM_A[11], top_RAM_A[10], top_RAM_A[9], top_RAM_A[8], top_RAM_A[7], top_RAM_A[6], top_RAM_A[5], top_RAM_A[4], top_RAM_A[3], top_RAM_A[2], top_RAM_A[1], top_RAM_A[0]}),
+  .top_RAM_DQ         ({top_RAM_DQ[7], top_RAM_DQ[6], top_RAM_DQ[5], top_RAM_DQ[4], top_RAM_DQ[3], top_RAM_DQ[2], top_RAM_DQ[1], top_RAM_DQ[0]}                                                                                                                             ),
+  .top_RAM_nCS        (top_RAM_nCS                                                                                                                                                                                                                                          ),
+  .top_RAM_nRD        (top_RAM_nRD                                                                                                                                                                                                                                          ),
+  .top_RAM_nWE        (top_RAM_nWE                                                                                                                                                                                                                                          ),
+  .top_ROM_A          ({top_ROM_A[22], top_ROM_A[21], top_ROM_A[20], top_ROM_A[19], top_ROM_A[18], top_ROM_A[17], top_ROM_A[16], top_ROM_A[15], top_ROM_A[14]}                                                                                                              ),
+  .top_ROM_nCS        (top_ROM_nCS                                                                                                                                                                                                                                          ),
+  .top_SENS_LOAD      (top_SENS_LOAD                                                                                                                                                                                                                                        ),
+  .top_SENS_READ      (top_SENS_READ                                                                                                                                                                                                                                        ),
+  .top_SENS_RESET     (top_SENS_RESET                                                                                                                                                                                                                                       ),
+  .top_SENS_SIN       (top_SENS_SIN                                                                                                                                                                                                                                         ),
+  .top_SENS_START     (top_SENS_START                                                                                                                                                                                                                                       ),
+  .top_SENS_XCK       (top_SENS_XCK                                                                                                                                                                                                                                         ),
+  .top_nCS            (top_nCS                                                                                                                                                                                                                                              ),
+  .top_nLED_RAMIO     (top_nLED_RAMIO                                                                                                                                                                                                                                       ),
+  .top_nLED_REC       (top_nLED_REC                                                                                                                                                                                                                                         ),
+  .top_nRD            (top_nRD                                                                                                                                                                                                                                              ),
+  .top_nRST           (top_nRST                                                                                                                                                                                                                                             ),
+  .top_nWR            (top_nWR                                                                                                                                                                                                                                              ),
+  .sys_clock          (sys_gck                                                                                                                                                                                                                                              ),
+  .bus_clock          (bus_clk                                                                                                                                                                                                                                              ),
+  .resetn             (sys_resetn                                                                                                                                                                                                                                           ),
+  .stop               (sys_ctrl_stop                                                                                                                                                                                                                                        ),
+  .mem_ahb_htrans     (mem_ahb_htrans                                                                                                                                                                                                                                       ),
+  .mem_ahb_hready     (mem_ahb_hready                                                                                                                                                                                                                                       ),
+  .mem_ahb_hwrite     (mem_ahb_hwrite                                                                                                                                                                                                                                       ),
+  .mem_ahb_haddr      (mem_ahb_haddr                                                                                                                                                                                                                                        ),
+  .mem_ahb_hsize      (mem_ahb_hsize                                                                                                                                                                                                                                        ),
+  .mem_ahb_hburst     (mem_ahb_hburst                                                                                                                                                                                                                                       ),
+  .mem_ahb_hwdata     (mem_ahb_hwdata                                                                                                                                                                                                                                       ),
+  .mem_ahb_hreadyout  (mem_ahb_hreadyout                                                                                                                                                                                                                                    ),
+  .mem_ahb_hresp      (mem_ahb_hresp                                                                                                                                                                                                                                        ),
+  .mem_ahb_hrdata     (mem_ahb_hrdata                                                                                                                                                                                                                                       ),
+  .slave_ahb_hsel     (slave_ahb_hsel                                                                                                                                                                                                                                       ),
+  .slave_ahb_hready   (slave_ahb_hready                                                                                                                                                                                                                                     ),
+  .slave_ahb_hreadyout(slave_ahb_hreadyout                                                                                                                                                                                                                                  ),
+  .slave_ahb_htrans   (slave_ahb_htrans                                                                                                                                                                                                                                     ),
+  .slave_ahb_hsize    (slave_ahb_hsize                                                                                                                                                                                                                                      ),
+  .slave_ahb_hburst   (slave_ahb_hburst                                                                                                                                                                                                                                     ),
+  .slave_ahb_hwrite   (slave_ahb_hwrite                                                                                                                                                                                                                                     ),
+  .slave_ahb_haddr    (slave_ahb_haddr                                                                                                                                                                                                                                      ),
+  .slave_ahb_hwdata   (slave_ahb_hwdata                                                                                                                                                                                                                                     ),
+  .slave_ahb_hresp    (slave_ahb_hresp                                                                                                                                                                                                                                      ),
+  .slave_ahb_hrdata   (slave_ahb_hrdata                                                                                                                                                                                                                                     ),
+  .ext_dma_DMACBREQ   (ext_dma_DMACBREQ                                                                                                                                                                                                                                     ),
+  .ext_dma_DMACLBREQ  (ext_dma_DMACLBREQ                                                                                                                                                                                                                                    ),
+  .ext_dma_DMACSREQ   (ext_dma_DMACSREQ                                                                                                                                                                                                                                     ),
+  .ext_dma_DMACLSREQ  (ext_dma_DMACLSREQ                                                                                                                                                                                                                                    ),
+  .ext_dma_DMACCLR    (ext_dma_DMACCLR                                                                                                                                                                                                                                      ),
+  .ext_dma_DMACTC     (ext_dma_DMACTC                                                                                                                                                                                                                                       ),
+  .local_int          (local_int                                                                                                                                                                                                                                            )
 );
 
 wire [7:0] gpio0_io_out_data;
 wire [7:0] gpio0_io_out_en;
 wire [7:0] gpio0_io_in = {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
 
-(* keep = 1 *) wire [7:0] gpio1_io_out_data;
-(* keep = 1 *) wire [7:0] gpio1_io_out_en;
-assign PIN_42_out_data = gpio1_io_out_data[0];
-assign PIN_42_out_en = gpio1_io_out_en[0];
-(* keep = 1 *) wire [7:0] gpio1_io_in = {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, PIN_42_in};
+wire [7:0] gpio1_io_out_data;
+wire [7:0] gpio1_io_out_en;
+wire [7:0] gpio1_io_in = {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
 
 wire [7:0] gpio2_io_out_data;
 wire [7:0] gpio2_io_out_en;

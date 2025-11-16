@@ -51,8 +51,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
         last_nWR <= 2'b11;
     end else begin 
-        last_nWR[1] <= last_nWR[0];
-        last_nWR[0] <= Cart_nWR;
+        last_nWR[1:0] <= {last_nWR[0], Cart_nWR};
     end
 end
 
@@ -60,8 +59,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
         last_nCS <= 2'b11;
     end else begin 
-        last_nCS[1] <= last_nCS[0];
-        last_nCS[0] <= Cart_nCS;
+        last_nCS[1:0] <= {last_nCS[0], Cart_nCS};
     end
 end
 
@@ -69,8 +67,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
         last_CamCaptureFinish <= 2'b00;
     end else begin 
-        last_CamCaptureFinish[1] <= last_CamCaptureFinish[0];
-        last_CamCaptureFinish[0] <= Sig_CamCaptureFinish;
+        last_CamCaptureFinish[1:0] <= {last_CamCaptureFinish[0], Sig_CamCaptureFinish};
     end
 end
 

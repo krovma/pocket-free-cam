@@ -1,28 +1,30 @@
 `default_nettype none
-`timescale 1ps/1ps
+`timescale 1ns/1ps
 module ag32gbd_ip (
-    ////////// GBD //////////////
-    input              cart_CLK,
-    inout       [15:0] cart_a,
-    inout       [7:0]  cart_d,
-    input              cart_nCS,
-    input              cart_nRD,
-    output tri0        cart_nRST,
-    input              cart_nWR,
-    output tri0 [16:13] ram_a,
-    output tri0        ram_ce2,
-    output tri0        ram_nCS,
-    output tri0        ram_nWE,
-    output tri0 [22:14] rom_a,
-    output tri0        rom_nCS,
-    output tri0        sens_load,
-    output tri0        sens_read,
-    output tri0        sens_reset,
-    output tri0        sens_sin,
-    output tri0        sens_start,
-    output tri0        sens_xck,
-
-    ////////// AG32 //////////////
+    // MAC-GBD
+    input       [15:0] top_A,
+    input              top_CLK,
+    inout       [7:0]  top_D,
+    output tri0 [16:0] top_RAM_A,
+    inout       [7:0]  top_RAM_DQ,
+    output tri0        top_RAM_nCS,
+    output tri0        top_RAM_nRD,
+    output tri0        top_RAM_nWE,
+    output tri0 [22:14] top_ROM_A,
+    output tri0        top_ROM_nCS,
+    output tri0        top_SENS_LOAD,
+    output tri0        top_SENS_READ,
+    output tri0        top_SENS_RESET,
+    output tri0        top_SENS_SIN,
+    output tri0        top_SENS_START,
+    output tri0        top_SENS_XCK,
+    input              top_nCS,
+    output tri0        top_nLED_RAMIO,
+    output tri0        top_nLED_REC,
+    input              top_nRD,
+    output tri0        top_nRST,
+    input              top_nWR,
+    // AG32 BOARD
     input              sys_clock,
     input              bus_clock,
     input              resetn,
@@ -56,70 +58,19 @@ module ag32gbd_ip (
     input       [3:0]  ext_dma_DMACTC,
     output tri0 [3:0]  local_int
 );
-
-// BEGIN Instantiate ADC
-// analog_ip analog_ip_inst(
-//     .stop                       (stop),
-//     .sys_clock                  (sys_clock),
-//     .bus_clock                  (bus_clock),
-//     .resetn                     (resetn),
-//     .mem_ahb_htrans             (mem_ahb_htrans),
-//     .mem_ahb_hready             (mem_ahb_hready),
-//     .mem_ahb_hwrite             (mem_ahb_hwrite),
-//     .mem_ahb_haddr              (mem_ahb_haddr),
-//     .mem_ahb_hsize              (mem_ahb_hsize),
-//     .mem_ahb_hburst             (mem_ahb_hburst[2:0]),
-//     .mem_ahb_hwdata             (mem_ahb_hwdata[31:0]),
-//     .mem_ahb_hreadyout          (mem_ahb_hreadyout),
-//     .mem_ahb_hresp              (mem_ahb_hresp),
-//     .mem_ahb_hrdata             (mem_ahb_hrdata[31:0]),
-//     .slave_ahb_hsel             (slave_ahb_hsel),
-//     .slave_ahb_hready           (slave_ahb_hready),
-//     .slave_ahb_hreadyout        (slave_ahb_hreadyout),
-//     .slave_ahb_htrans           (slave_ahb_htrans[1:0]),
-//     .slave_ahb_hsize            (slave_ahb_hsize[2:0]),
-//     .slave_ahb_hburst           (slave_ahb_hburst[2:0]),
-//     .slave_ahb_hwrite           (slave_ahb_hwrite),
-//     .slave_ahb_haddr            (slave_ahb_haddr[31:0]),
-//     .slave_ahb_hwdata           (slave_ahb_hwdata[31:0]),
-//     .slave_ahb_hresp            (slave_ahb_hresp),
-//     .slave_ahb_hrdata           (slave_ahb_hrdata[31:0]),
-//     .ext_dma_DMACBREQ           (ext_dma_DMACBREQ[3:0]),
-//     .ext_dma_DMACLBREQ          (ext_dma_DMACLBREQ[3:0]),
-//     .ext_dma_DMACSREQ           (ext_dma_DMACSREQ[3:0]),
-//     .ext_dma_DMACLSREQ          (ext_dma_DMACLSREQ[3:0]),
-//     .ext_dma_DMACCLR            (ext_dma_DMACCLR[3:0]),
-//     .ext_dma_DMACTC             (ext_dma_DMACTC[3:0]),
-//     .local_int                  (local_int[3:0])
-// );
-// END Instantiate ADC
-
-// clock debug
-// reg sys_clock_x10;
-// reg [2:0] clk_counter;
-// always @(posedge sys_clock or negedge resetn) begin
-//     if (!resetn) begin
-//         sys_clock_x10 <= 0;
-//         clk_counter <= 0;
-//     end else begin
-//         if (clk_counter == 3'd4) begin
-//             sys_clock_x10 <= ~sys_clock_x10;
-//             clk_counter <= 0;
-//         end else begin
-//             clk_counter <= clk_counter + 3'd1;
-//         end
-//     end
-// end
-
+assign mem_ahb_hreadyout = 1'b1;
+assign slave_ahb_hready  = 1'b1;
 
 ///////////////////
 // bram allocation
-//  16byte per tile (8*8), each 8 lines (128*8) has 16 tiles = 256 Bytes
+//  2-Bit per Pixel, 16 Byte Per Row, 8 Row Per Buffer
 //  000-0FF output image buffer A
-//      [000] -> A-H of (0,0)to(7,0)  [001] -> I-P of (0,0)to(7,0)
-//      [002] -> A-H of (8,0)to(15,0) [003] -> I-P of (8,0)to(15,0)
-//      ...
-//      [0FE] -> A-H of (120,8) to (127,8) [0FF] -> I-P of (120,8)(127,8)
+//      Row 0 [000] -> [2'b(0,0) 2'b(0,1) 2'b(0,2) 2'b(0,3)]                  [001] -> [2'b(0,4) 2'b(0,5) 2'b(0,6) 2'b(0,7)]
+//            [002] -> .....
+//      ...                                                                   [01F] -> [2'b(0,124) 2'b(0,125) 2'b(0,126) 2'b(0,127)]
+//      Row 1 [020] -> [2'b(1,0) 2'b(1,1) 2'b(1,2) 2'b(1,3)]                  [021] -> [2'b(1,4) 2'b(1,5) 2'b(1,6) 2'b(1,7)]
+//      ... Row2 - Row7: 040 060 080 0A0 0C0 0F0
+//      End   [0FE] -> [2'b(7,120) 2'b(7,121) 2'b(7,122) 2'b(7,123)]          [0FF] -> [2'b(7,124) 2'b(7,125) 2'b(7,126) 2'b(7,127)]
 //  100-1FF output image buffer B
 //
 //  200-235 compare matrix (cam reg a006-a035 shifted to [200:22F])
@@ -148,16 +99,15 @@ module ag32gbd_ip (
 //     end
 // endfunction
 
-assign cart_nRST = 1'bz;
-assign ram_ce2 = 1'b1;
+assign top_nRST = 1'bz;
 
 wire [22:14] output_rom_a;
 wire output_rom_nCS;
 
 ag32gbd_rom gbdrom(
-    .Cart_a(cart_a),
-    .Cart_d(cart_d),
-    .Cart_nWR(cart_nWR),
+    .Cart_a(top_A),
+    .Cart_d(top_D),
+    .Cart_nWR(top_nWR),
 
     .sys_resetn(resetn),
     .sys_clock(sys_clock),
@@ -166,29 +116,43 @@ ag32gbd_rom gbdrom(
     .Rom_nCS(output_rom_nCS)
 );
 
-assign rom_a = output_rom_a;
-assign rom_nCS = output_rom_nCS;
+assign top_ROM_A = output_rom_a;
+assign top_ROM_nCS = output_rom_nCS;
 
-wire [16:13] ram_a_normal;
+wire [16:13] ram_a_high_normal;
 wire ram_nCS_normal;
 wire ram_nWE_normal;
 wire [4:0] ram_bank_id;
+wire isReadingRAM;
+wire isAccessingRam;
+wire isGbdWritingRam;
+wire [7:0] RamOutputData;
+
 
 ag32gbd_ram gbdram(
-    .Cart_a(cart_a),
-    .Cart_d(cart_d),
-    .Cart_nWR(cart_nWR),
-    .Cart_nCS(cart_nCS),
+    .Cart_a(top_A),
+    .Cart_d(top_D),
+    .Cart_nWR(top_nWR),
+    .Cart_nRD(top_nRD),
+    .Cart_nCS(top_nCS),
 
     .sys_resetn(resetn),
     .sys_clock(sys_clock),
 
-    .Ram_a(ram_a_normal),
+    .is_gbd_writing_ram(isGbdWritingRam),
+
+    .Ram_a(ram_a_high_normal),
     .Ram_nCS(ram_nCS_normal),
     .Ram_nWE(ram_nWE_normal),
+    .Ram_nRD(top_RAM_nRD),
+    .Ram_dq(top_RAM_DQ),
+    .Ram_output(RamOutputData),
 
-    .Ram_Bank_Id(ram_bank_id)
+    .Ram_Bank_Id(ram_bank_id),
+    .is_accessing_ram(isAccessingRam)
 );
+
+assign isReadingRAM = isAccessingRam && !top_nRD && !top_nCS;
 
 // modules using bram
 
@@ -226,17 +190,20 @@ ag32gbd_bram_ctrl gbdbram_ctrl(
     .BufferReadDataReady(BufferReadDataReady)
 );
 
-wire isGbdWritingRam;
 wire [11:0] ram_a_low_writing;
 wire [7:0] data_ram_writing;
 wire ram_nCS_writing;
 wire ram_nWE_writing;
+wire BlockBufferDataReady;
 
 ag32gbd_ram_write gbdram_write(
     .sys_resetn(resetn),
     .sys_clock(sys_clock),
-    .cart_CLK(cart_CLK),
-    
+    .bus_clock(bus_clock),
+    .cart_CLK(top_CLK),
+
+    .BlockBufferDataReady(BlockBufferDataReady),
+
     .Gbd_Writing_Ram(isGbdWritingRam),
     .Ram_Writing_Addr_Low(ram_a_low_writing),
     .Ram_Writing_Data(data_ram_writing),
@@ -263,11 +230,12 @@ wire                 Flag_CamCapture;
 wire                 Flag_CamCaptureFinish;
 
 ag32gbd_reg gbdreg(
-    .Cart_a(cart_a),
-    .Cart_d(cart_d),
-    .Cart_nRD(cart_nRD),
-    .Cart_nWR(cart_nWR),
-    .Cart_nCS(cart_nCS),
+    .Cart_a(top_A),
+    .Cart_d(top_D),
+    .Cart_nRD(top_nRD),
+    .Cart_nWR(top_nWR),
+    .Cart_nCS(top_nCS),
+
     .sys_resetn(resetn),
     .sys_clock(sys_clock),
     .Ram_bank_id(ram_bank_id),
@@ -289,7 +257,7 @@ ag32gbd_reg gbdreg(
 
 ag32gbd_cam gbdcam(
     .Cam_Capture(Flag_CamCapture),
-    .Cart_CLK(cart_CLK),
+    .Cart_CLK(top_CLK),
     .Reg_A000(Reg_A000),
     .Reg_A001(Reg_A001),
     .Reg_A002(Reg_A002),
@@ -300,28 +268,53 @@ ag32gbd_cam gbdcam(
     .sys_clock(sys_clock),
     .sys_resetn(resetn),
 
-    .Sens_XCK(sens_xck),
-    .Cam_Capture_Finish(Flag_CamCaptureFinish)
+    .Sens_XCK(top_SENS_XCK),
+    .Cam_Capture_Finish(Flag_CamCaptureFinish),
+
+    .FlipBuffer(FlipBuffer),
+    .BufferWriteData(BufferWriteData),
+    .BufferWriteOffset(BufferWriteOffset),
+    .RequestWriteBuffer(RequestWriteBuffer),
+
+    .BlockBufferDataReady(BlockBufferDataReady)
 );
 
-// assign sens_read = Flag_CamCapture;
-// assign sens_sin = Flag_CamCaptureFinish;
+
+//clock debug
+reg sys_clock_x10;
+reg [2:0] clk_counter;
+always @(posedge sys_clock or negedge resetn) begin
+    if (!resetn) begin
+        sys_clock_x10 <= 0;
+        clk_counter <= 0;
+    end else begin
+        if (clk_counter == 3'd4) begin
+            sys_clock_x10 <= ~sys_clock_x10;
+            clk_counter <= 0;
+        end else begin
+            clk_counter <= clk_counter + 3'd1;
+        end
+    end
+end
+
+assign top_nLED_REC = ~Flag_CamCapture;
+assign top_nLED_RAMIO = ~isGbdWritingRam;
+
+assign top_SENS_SIN = Flag_CamCaptureFinish;
 // assign sens_start = bus_clock;
-// assign sens_load = sys_clock_x10;
+assign top_SENS_LOAD = sys_clock_x10;
 
 //output assignments
 wire isReadingReg = Reg_OutputValid;
 //wire isReadRAM = cart_a[15:13] == 3'b101 && !cart_nRD && !cart_nCS;
 
-assign sens_reset = isReadingReg;
-assign cart_a[15:13] = 3'bzzz;
-assign cart_a[12:0] = 13'bz_zzzz_zzzz_zzzz;//isGbdWritingRam? {1'b0, ram_a_low_writing[11:0]} : 13'bz_zzzz_zzzz_zzzz;
-assign cart_d[7:0] = //8'hzz;
-    isGbdWritingRam ? data_ram_writing : (isReadingReg ? Reg_OutputData : 8'hzz);
+assign top_D[7:0] = (isReadingReg ? Reg_OutputData[7:0] : (isReadingRAM ? RamOutputData[7:0] : 8'bz));
 
-assign ram_a[16:13] = ram_a_normal; //isGbdWritingRam ? 4'b0 : ram_a_normal;
-assign ram_nCS = ram_nCS_normal; //isGbdWritingRam ? ram_nCS_writing :ram_nCS_normal;
-assign ram_nWE = ram_nWE_normal; //isGbdWritingRam ? ram_nWE_writing :ram_nWE_normal;
+assign top_RAM_A[12:0]  = top_A[12:0];
+assign top_RAM_A[16:13] = ram_a_high_normal[16:13];     //isGbdWritingRam ? 4'b0 : ram_a_normal;
+
+assign top_RAM_nCS      = ram_nCS_normal;   //isGbdWritingRam ? ram_nCS_writing :ram_nCS_normal;
+assign top_RAM_nWE      = ram_nWE_normal;   //isGbdWritingRam ? ram_nWE_writing :ram_nWE_normal;
 
 endmodule
 

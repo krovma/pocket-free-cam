@@ -62,52 +62,45 @@ block_ram	block_ram_inst (
 localparam [9:0] ImageBufferA = 10'h000;
 localparam [9:0] ImageBufferB = 10'h100;
 
-reg [2:0] FlipBufferEdge;
-reg [2:0] RequestWriteRegEdge;
-reg [2:0] RequestWriteBufferEdge;
-reg [2:0] RequestReadRegEdge;
-reg [2:0] RequestReadBufferEdge;
+reg [1:0] RequestWriteRegEdge;
+reg [1:0] RequestWriteBufferEdge;
+reg [1:0] RequestReadRegEdge;
+reg [1:0] RequestReadBufferEdge;
+
+reg [9:0] FlipBufferDelay;
 
 reg WaitRegRead;
 reg WaitBufferRead;
 
-reg BufferSwapped;
+wire BufferSwapped;
+always @(posedge sys_clock or negedge resetn) begin
+    if (!resetn) begin
+        FlipBufferDelay <= 10'b0;
+    end else begin
+        FlipBufferDelay <= {FlipBufferDelay[8:0], FlipBuffer};
+    end
+end
+assign BufferSwapped = FlipBufferDelay[9];
 
 wire [9:0] BufferPortA = BufferSwapped ? ImageBufferB : ImageBufferA;
 wire [9:0] BufferPortB = BufferSwapped ? ImageBufferA : ImageBufferB;
 
 
-always @(posedge sys_clock) begin
+always @(posedge sys_clock or negedge resetn) begin
     if (!resetn) begin
-        FlipBufferEdge <= 3'bx;
-        RequestWriteRegEdge <= 3'b0;
-        RequestWriteBufferEdge <= 3'b0;
-        RequestReadRegEdge <= 3'b0;
-        RequestReadBufferEdge <= 3'b0;
+        RequestWriteRegEdge     <= 2'b0;
+        RequestWriteBufferEdge  <= 2'b0;
+        RequestReadRegEdge      <= 2'b0;
+        RequestReadBufferEdge   <= 2'b0;
     end else begin
-        FlipBufferEdge[2] <= FlipBufferEdge[1];
-        FlipBufferEdge[1] <= FlipBufferEdge[0];
-        FlipBufferEdge[0] <= FlipBuffer;
-        
-        RequestWriteRegEdge[2] <= RequestWriteRegEdge[1];
-        RequestWriteRegEdge[1] <= RequestWriteRegEdge[0];
-        RequestWriteRegEdge[0] <= RequestWriteReg;
-
-        RequestWriteBufferEdge[2] <= RequestWriteBufferEdge[1];
-        RequestWriteBufferEdge[1] <= RequestWriteBufferEdge[0];
-        RequestWriteBufferEdge[0] <= RequestWriteBuffer;
-
-        RequestReadRegEdge[2] <= RequestReadRegEdge[1];
-        RequestReadRegEdge[1] <= RequestReadRegEdge[0];
-        RequestReadRegEdge[0] <= RequestReadReg;
-
-        RequestReadBufferEdge[2] <= RequestReadBufferEdge[1];
-        RequestReadBufferEdge[1] <= RequestReadBufferEdge[0];
-        RequestReadBufferEdge[0] <= RequestReadBuffer;
+        RequestWriteRegEdge    <= {RequestWriteRegEdge[0], RequestWriteReg};
+        RequestWriteBufferEdge <= {RequestWriteBufferEdge[0], RequestWriteBuffer};
+        RequestReadRegEdge     <= {RequestReadRegEdge[0], RequestReadReg};
+        RequestReadBufferEdge  <= {RequestReadBufferEdge[0], RequestReadBuffer};
     end
 end
 
-always @(posedge sys_clock) begin
+always @(posedge sys_clock or negedge resetn) begin
     if (!resetn) begin
         bram_addr_a <= 10'h3FF;
         bram_addr_b <= 10'h3FF;
@@ -125,18 +118,13 @@ always @(posedge sys_clock) begin
         WaitRegRead <= 1'b0;
         WaitBufferRead <= 1'b0;
 
-        BufferSwapped <= 1'b0;
     end else begin
-
-        if (FlipBufferEdge[2] != FlipBufferEdge[1]) begin
-            BufferSwapped <= ~BufferSwapped;
-        end
 
         if (WaitBufferRead) begin
             BufferReadOutput <= bram_data_out_b;
             WaitBufferRead <= 1'b0;
             BufferReadDataReady <= 1'b1;
-        end else if (RequestReadBufferEdge[2] && !RequestReadBufferEdge[1]) begin
+        end else if (!RequestReadBufferEdge[1] && RequestReadBufferEdge[0]) begin
             bram_rden_b <= 1'b1;
             bram_wren_b <= 1'b0;
             bram_addr_b <= BufferPortB + BufferReadOffset;
@@ -144,7 +132,7 @@ always @(posedge sys_clock) begin
             BufferReadDataReady <= 1'b0;
         end
 
-        if (RequestWriteRegEdge[2] && RequestReadRegEdge[1]) begin
+        if (!RequestWriteRegEdge[1] && RequestReadRegEdge[0]) begin
             bram_rden_a <= 1'b0;
             bram_wren_a <= 1'b1;
             bram_addr_a <= RegWriteAddr;
@@ -153,13 +141,13 @@ always @(posedge sys_clock) begin
             RegReadOutput <= bram_data_out_a;
             WaitRegRead <= 1'b0;
             RegReadDataReady <= 1'b1;
-        end else if (RequestReadRegEdge[2] && RequestReadRegEdge[1]) begin
+        end else if (!RequestReadRegEdge[1] && RequestReadRegEdge[0]) begin
             bram_rden_a <= 1'b1;
             bram_wren_a <= 1'b0;
             bram_addr_a <= RegReadAddr;
             WaitRegRead <= 1'b1;
             RegReadDataReady <= 1'b0;
-        end else if (RequestWriteBufferEdge[2] && RequestWriteBufferEdge[1]) begin
+        end else if (!RequestWriteBufferEdge[1] && RequestWriteBufferEdge[0]) begin
             bram_rden_a <= 1'b0;
             bram_wren_a <= 1'b1;
             bram_addr_a <= BufferPortA + BufferWriteOffset;

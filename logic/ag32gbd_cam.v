@@ -52,6 +52,19 @@ module ag32gbd_cam (
     input sys_clock,
     input sys_resetn,
 
+    // to bram
+    output reg          FlipBuffer,
+    output reg  [7:0]   BufferWriteData,
+    output reg  [9:0]   BufferWriteOffset,
+    output reg          RequestWriteBuffer,
+    // from sampler to bram
+    output              RequestReadReg,
+    output      [9:0]   RegReadAddr,
+    input       [8:0]   RegReadOutput,
+    input               RegReadDataReady,
+    // to Ram writer
+    output reg          BlockBufferDataReady,
+
     output Sens_XCK,
     output reg Cam_Capture_Finish
 );
@@ -113,8 +126,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
         Last_XCK_Reg <= 2'b0;
     end else begin
-        Last_XCK_Reg[1] <= Last_XCK_Reg[0];
-        Last_XCK_Reg[0] <= Sens_XCK_Reg;
+        Last_XCK_Reg[1:0] <= {Last_XCK_Reg[0], Sens_XCK_Reg};
     end
 end
 
@@ -123,10 +135,33 @@ always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
         Last_CLK_Reg <= 2'b0;
     end else begin
-        Last_CLK_Reg[1] <= Last_CLK_Reg[0];
-        Last_CLK_Reg[0] <= Cart_CLK;
+        Last_CLK_Reg[1:0] <= {Last_CLK_Reg[0], Cart_CLK};
     end
 end
+
+reg [6:0] PixelX;
+reg [6:0] PixelY;
+reg SampleStart;
+wire SampleDone;
+wire [2:0] SampledValue;
+reg [7:0] fake_data_source;
+
+ag32gbd_sampler sampler_inst (
+    .PixelX(PixelX),
+    .PixelY(PixelY),
+    .SampleStart(SampleStart),
+    .RegReadOutput(RegReadOutput),
+    .RegReadDataReady(RegReadDataReady),
+    .RequestReadReg(RequestReadReg),
+    .RegReadAddr(RegReadAddr),
+    .SampleDone(SampleDone),
+    .SampledValue(SampledValue),
+    .sys_resetn(sys_resetn),
+    .sys_clock(sys_clock),
+    .FakeResultValue(fake_data_source)
+);
+
+reg [7:0] ByteDataBuffer;
 
 // camera state machine do nothing if cam_capture is 0
 reg [10:0] main_state;
@@ -146,8 +181,21 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         main_state <= S_IDLE;
         config_state <= S_CONFIG_R1;
         reset_pulse_send <= 0;
+
+        //sampler
+        fake_data_source <= 0;
+        PixelX <= 0;
+        PixelY <= 0;
+        SampleStart <= 0;
+        ByteDataBuffer <= 0;
         // outputs
-        Cam_Capture_Finish <= 1'b0;
+        FlipBuffer <= 0;
+        BufferWriteData <= 0;
+        BufferWriteOffset <= 0;
+        RequestWriteBuffer <= 0;
+        BlockBufferDataReady <= 0;
+        Cam_Capture_Finish <= 0;
+
     end else if (Cam_Capture) begin
         case(main_state)
         S_IDLE: begin
@@ -213,8 +261,13 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
                 if (small_counter == 2'd1) begin
                     main_state <= S_READ;
+                    PixelX <= 0;
+                    PixelY <= 0;
+                    SampleStart <= 1'b1;
                     //debug
                     counter0 <= 0;
+                    fake_data_source <= 0;
+                    
                 end else begin
                     small_counter <= 2'd1;
                 end
@@ -226,8 +279,38 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                     main_state <= S_WAIT2;
                     small_counter <= 0;
                 end else begin
-                    counter0[14:0] = counter0[14:0] + 15'd1;
+                    // assume this is the end of one pixel read
+                    if (PixelX[1:0] == 2'b11) begin
+                        // 4 pixels done, write to bram
+                        BufferWriteData <= ByteDataBuffer;
+                        BufferWriteOffset[9:0] <= {2'b00, counter0[9:2]}; // divide by 4
+                        RequestWriteBuffer <= 1'b1;
+                    end else begin
+                        RequestWriteBuffer <= 1'b0;
+                    end
+                    if (PixelY[2:0] == 3'b000) begin
+                        // 8 rows done, swap buffer
+                        // flip buffer is delayed 10 clocks in bram ctrl, sop we can set it now
+                        FlipBuffer <= ~FlipBuffer;
+                    end
+
+                    counter0[14:0] <= counter0[14:0] + 15'd1;
+                    if (PixelX == 7'd127) begin
+                        PixelX <= 7'd0;
+                        PixelY <= PixelY + 7'b1;
+                    end else begin
+                        PixelX <= PixelX + 7'b1;
+                    end
+                    if (PixelY <= 7'd127) begin
+                        SampleStart <= 1'b1;
+                    end
+                    fake_data_source <= fake_data_source + 8'b1;
                 end
+            end
+            // normal clock domain
+            if (SampleDone) begin
+                SampleStart <= 1'b0;
+                ByteDataBuffer[7:0] <= {ByteDataBuffer[5:0], SampledValue[1:0]}; // Shift to left
             end
         end
         S_WAIT2: begin

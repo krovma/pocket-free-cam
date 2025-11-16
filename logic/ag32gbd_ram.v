@@ -5,21 +5,27 @@ module ag32gbd_ram (
     input       [15:0]    Cart_a,
     inout       [7:0]     Cart_d,
     input                 Cart_nWR,
+    input                 Cart_nRD,
     input                 Cart_nCS,
-
     input                 sys_resetn,
     input                 sys_clock,
 
+    input                is_gbd_writing_ram,
+
+    output               is_accessing_ram,
     output      [16:13]  Ram_a,
+    inout       [7:0]    Ram_dq,
+    output      [7:0]    Ram_output,
     output               Ram_nCS,
     output               Ram_nWE,
-
+    output               Ram_nRD,
     output      [4:0]    Ram_Bank_Id
 );
 
 reg [4:0] ram_bank_id = 5'b0;
 reg ram_wren = 1'b0;
 reg [1:0] last_nWR = 2'b11;
+
 
 wire is_ram_bank_id_addr = (Cart_a[15:13] == 3'b010);
 wire is_ram_wren_addr = (Cart_a[15:13] == 3'b000);
@@ -29,10 +35,10 @@ always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
         last_nWR <= 2'b11;
     end else begin 
-        last_nWR[1] <= last_nWR[0];
-        last_nWR[0] <= Cart_nWR;
+        last_nWR[1:0] <= {last_nWR[0], Cart_nWR};
     end
 end
+
 
 always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
@@ -64,10 +70,15 @@ end
 
 
 wire is_ram_bank = (ram_bank_id[4] == 1'b0);
+assign is_accessing_ram = is_accessing_ram_addr && is_ram_bank;
 assign Ram_a[16:13] = ram_bank_id[3:0];
-assign Ram_nCS = (is_accessing_ram_addr && is_ram_bank) ? Cart_nCS : 1'b1;
+assign Ram_nCS = is_accessing_ram ? Cart_nCS : 1'b1;
 assign Ram_nWE = ram_wren ? Cart_nWR : 1'b1;
+assign Ram_nRD = !Cart_nCS ? Cart_nRD : 1'b1;
 assign Ram_Bank_Id[4:0] = ram_bank_id[4:0];
+
+assign Ram_dq[7:0] = (!Ram_nCS && !Ram_nWE) ? Cart_d[7:0] : 8'bz;
+assign Ram_output[7:0] = (is_accessing_ram && !Ram_nCS && !Cart_nRD) ? Ram_dq[7:0] : 8'b0;
 
 endmodule
 `default_nettype wire
