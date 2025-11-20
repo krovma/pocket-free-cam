@@ -54,3 +54,4 @@ gbd_batch.bin
 gbd_routed.v
 gbd.inc
 ag32gbd_ip_tmpl.v
+logic/gbd_chis_version_backup.bin

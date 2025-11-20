@@ -63,7 +63,7 @@ assign slave_ahb_hready  = 1'b1;
 
 ///////////////////
 // bram allocation
-//  2-Bit per Pixel, 16 Byte Per Row, 8 Row Per Buffer
+//  2-Bit per Pixel, 4 Pixel per Byte, 128 Pixel per Row => 32 Byte Per Row, 8 Row Per Buffer => 256 Byte Per Buffer [00-FF]
 //  000-0FF output image buffer A
 //      Row 0 [000] -> [2'b(0,0) 2'b(0,1) 2'b(0,2) 2'b(0,3)]                  [001] -> [2'b(0,4) 2'b(0,5) 2'b(0,6) 2'b(0,7)]
 //            [002] -> .....
@@ -119,15 +119,16 @@ ag32gbd_rom gbdrom(
 assign top_ROM_A = output_rom_a;
 assign top_ROM_nCS = output_rom_nCS;
 
-wire [16:13] ram_a_high_normal;
-wire ram_nCS_normal;
-wire ram_nWE_normal;
 wire [4:0] ram_bank_id;
 wire isReadingRAM;
 wire isAccessingRam;
-wire isGbdWritingRam;
+wire top_isGbdWritingRam;
 wire [7:0] RamOutputData;
+wire [7:0] top_gbd_ram_writing_data;
 
+wire [11:0] ram_a_low_writing;
+wire ram_nCS_writing;
+wire ram_nWE_writing;
 
 ag32gbd_ram gbdram(
     .Cart_a(top_A),
@@ -139,15 +140,20 @@ ag32gbd_ram gbdram(
     .sys_resetn(resetn),
     .sys_clock(sys_clock),
 
-    .is_gbd_writing_ram(isGbdWritingRam),
+    .is_gbd_writing_ram(top_isGbdWritingRam),
 
-    .Ram_a(ram_a_high_normal),
-    .Ram_nCS(ram_nCS_normal),
-    .Ram_nWE(ram_nWE_normal),
-    .Ram_nRD(top_RAM_nRD),
-    .Ram_dq(top_RAM_DQ),
-    .Ram_output(RamOutputData),
+    .in_Writing_dq      (top_gbd_ram_writing_data),
+    .in_Writing_Addr_low(ram_a_low_writing),
+    .in_Writing_nCS     (ram_nCS_writing),
+    .in_Writing_nWE     (ram_nWE_writing),
 
+    .Ram_addr   (top_RAM_A),
+    .Ram_nCS    (top_RAM_nCS),
+    .Ram_nWE    (top_RAM_nWE),
+    .Ram_nRD    (top_RAM_nRD),
+    .Ram_dq     (top_RAM_DQ),
+
+    .Ram_output_to_cart (RamOutputData),
     .Ram_Bank_Id(ram_bank_id),
     .is_accessing_ram(isAccessingRam)
 );
@@ -173,6 +179,9 @@ wire    [7:0]   BufferReadOutput;
 wire            BufferReadDataReady;
 
 ag32gbd_bram_ctrl gbdbram_ctrl(
+    .sys_clock(sys_clock),
+    .resetn(resetn),
+
     .FlipBuffer(FlipBuffer),
     .RequestWriteReg(RequestWriteReg),
     .RegWriteData(RegWriteData),
@@ -190,11 +199,9 @@ ag32gbd_bram_ctrl gbdbram_ctrl(
     .BufferReadDataReady(BufferReadDataReady)
 );
 
-wire [11:0] ram_a_low_writing;
-wire [7:0] data_ram_writing;
-wire ram_nCS_writing;
-wire ram_nWE_writing;
-wire BlockBufferDataReady;
+
+wire topBlockBufferDataReady;
+wire top_ramNewRunReset;
 
 ag32gbd_ram_write gbdram_write(
     .sys_resetn(resetn),
@@ -202,11 +209,12 @@ ag32gbd_ram_write gbdram_write(
     .bus_clock(bus_clock),
     .cart_CLK(top_CLK),
 
-    .BlockBufferDataReady(BlockBufferDataReady),
+    .NewRunReset(top_ramNewRunReset),
+    .BlockBufferDataReady(topBlockBufferDataReady),
 
-    .Gbd_Writing_Ram(isGbdWritingRam),
+    .Gbd_Writing_Ram(top_isGbdWritingRam),
     .Ram_Writing_Addr_Low(ram_a_low_writing),
-    .Ram_Writing_Data(data_ram_writing),
+    .Ram_Writing_Data(top_gbd_ram_writing_data),
     .Ram_Writing_nCS(ram_nCS_writing),
     .Ram_Writing_nWE(ram_nWE_writing),
 
@@ -271,12 +279,19 @@ ag32gbd_cam gbdcam(
     .Sens_XCK(top_SENS_XCK),
     .Cam_Capture_Finish(Flag_CamCaptureFinish),
 
+    .RequestReadReg(RequestReadReg),
+    .RegReadAddr(RegReadAddr),
+    .RegReadOutput(RegReadOutput),
+    .RegReadDataReady(RegReadDataReady),
+
     .FlipBuffer(FlipBuffer),
     .BufferWriteData(BufferWriteData),
     .BufferWriteOffset(BufferWriteOffset),
     .RequestWriteBuffer(RequestWriteBuffer),
 
-    .BlockBufferDataReady(BlockBufferDataReady)
+    .isGbdWritingRam(top_isGbdWritingRam),
+    .RamNewRun(top_ramNewRunReset),
+    .BlockBufferDataReady(topBlockBufferDataReady)
 );
 
 
@@ -298,7 +313,8 @@ always @(posedge sys_clock or negedge resetn) begin
 end
 
 assign top_nLED_REC = ~Flag_CamCapture;
-assign top_nLED_RAMIO = ~isGbdWritingRam;
+assign top_nLED_RAMIO = ~top_isGbdWritingRam;
+//assign top_nLED_RAMIO = ~isReadingRAM;
 
 assign top_SENS_SIN = Flag_CamCaptureFinish;
 // assign sens_start = bus_clock;
@@ -309,12 +325,6 @@ wire isReadingReg = Reg_OutputValid;
 //wire isReadRAM = cart_a[15:13] == 3'b101 && !cart_nRD && !cart_nCS;
 
 assign top_D[7:0] = (isReadingReg ? Reg_OutputData[7:0] : (isReadingRAM ? RamOutputData[7:0] : 8'bz));
-
-assign top_RAM_A[12:0]  = top_A[12:0];
-assign top_RAM_A[16:13] = ram_a_high_normal[16:13];     //isGbdWritingRam ? 4'b0 : ram_a_normal;
-
-assign top_RAM_nCS      = ram_nCS_normal;   //isGbdWritingRam ? ram_nCS_writing :ram_nCS_normal;
-assign top_RAM_nWE      = ram_nWE_normal;   //isGbdWritingRam ? ram_nWE_writing :ram_nWE_normal;
 
 endmodule
 

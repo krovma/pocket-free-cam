@@ -85,46 +85,6 @@ ag32gbd_ip gbd_inst(
   .sys_clock  (i_sys_clock),
   //.bus_clock,
   .resetn     (i_resetn)
-  //.stop,
-  //.mem_ahb_htrans,
-  //.mem_ahb_hready,
-  //.mem_ahb_hwrite,
-  //.mem_ahb_haddr,
-  //.mem_ahb_hsize,
-  //.mem_ahb_hburst,
-  //.mem_ahb_hwdata,
-  //.mem_ahb_hreadyout,
-  //.mem_ahb_hresp,
-  //.mem_ahb_hrdata,
-  //.slave_ahb_hsel       (i_slave_ahb_hsel),
-  //.slave_ahb_hready     (i_slave_ahb_hready),
-  //.slave_ahb_hreadyout  (i_slave_ahb_hreadyout),
-  //.slave_ahb_htrans     (i_slave_ahb_htrans),
-  //.slave_ahb_hsize      (i_slave_ahb_hsize),
-  //.slave_ahb_hburst     (i_slave_ahb_hburst),
-  //.slave_ahb_hwrite     (i_slave_ahb_hwrite),
-  //.slave_ahb_haddr      (i_slave_ahb_haddr),
-  //.slave_ahb_hwdata     (i_slave_ahb_hwdata),
-  //.slave_ahb_hresp      (i_slave_ahb_hresp),
-  //.slave_ahb_hrdata     (i_slave_ahb_hrdata)
-  // .ext_dma_DMACBREQ,
-  // .ext_dma_DMACLBREQ,
-  // .ext_dma_DMACSREQ,
-  // .ext_dma_DMACLSREQ,
-  // .ext_dma_DMACCLR,
-  // .ext_dma_DMACTC,
-  // .local_int
-  // , .OUT_cam_reg_selected (i_OUT_cam_reg_selected)
-  // , .OUT_is_ram_addr      (i_OUT_is_ram_addr)
-  // , .OUT_is_capturing     (i_OUT_is_capturing)
-  //, .OUT_data_output_r    (i_OUT_data_output_r)
-  // , .OUT_ram_bank_id      (i_OUT_ram_bank_id)
-  // , .OUT_cam_reg_write_clk (i_OUT_cam_reg_write_clk)
-  // , .OUT_a000 (i_OUT_a000)
-  // , .OUT_xck_count (i_OUT_xck_count)
-  , .debug_RAM_BANK(i_debug_RAM_BANK)
-  , .debug_ROM_BANK(i_debug_ROM_BANK)
-  , .debug_bram_output(i_debug_bram_output)
 );
 
 reg gb_clk = 0;

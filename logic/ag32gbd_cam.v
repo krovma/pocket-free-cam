@@ -60,9 +60,11 @@ module ag32gbd_cam (
     // from sampler to bram
     output              RequestReadReg,
     output      [9:0]   RegReadAddr,
-    input       [8:0]   RegReadOutput,
+    input       [7:0]   RegReadOutput,
     input               RegReadDataReady,
     // to Ram writer
+    input               isGbdWritingRam,
+    output reg          RamNewRun,
     output reg          BlockBufferDataReady,
 
     output Sens_XCK,
@@ -173,6 +175,8 @@ reg reset_pulse_send;
 
 reg [18:0] exposure_counter;
 
+reg [3:0] debug_counter;
+
 always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
         // internal states
@@ -195,6 +199,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         RequestWriteBuffer <= 0;
         BlockBufferDataReady <= 0;
         Cam_Capture_Finish <= 0;
+        RamNewRun <= 0;
 
     end else if (Cam_Capture) begin
         case(main_state)
@@ -205,6 +210,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             end
         end
         S_RESET0: begin
+            RamNewRun <= 1'b1;
             // pseudo wait 1clk
             if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin // set at negedge, reset signal is read at posedge of xck
                 if (!reset_pulse_send) begin
@@ -222,6 +228,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             end
         end
         S_CONFIG: begin
+            RamNewRun <= 1'b0;
             // data latch at posedge of xck, load latch at negedge of xck
             // load should be high for at least 0.8us, which is half of xck
             // we need clk signal to handle this behavior, also recall that xck and clk sync at clk posedge
@@ -264,8 +271,9 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                     PixelX <= 0;
                     PixelY <= 0;
                     SampleStart <= 1'b1;
-                    //debug
                     counter0 <= 0;
+                    //debug
+                    debug_counter <= 0;
                     fake_data_source <= 0;
                     
                 end else begin
@@ -278,7 +286,10 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                 if (counter0[14:0] == (Nbit ? 15'd16128 : 15'd16384)) begin
                     main_state <= S_WAIT2;
                     small_counter <= 0;
+                    FlipBuffer <= ~FlipBuffer;
+                    BlockBufferDataReady <= 1'b0;
                 end else begin
+                    counter0[14:0] <= counter0[14:0] + 15'd1;
                     // assume this is the end of one pixel read
                     if (PixelX[1:0] == 2'b11) begin
                         // 4 pixels done, write to bram
@@ -286,35 +297,46 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                         BufferWriteOffset[9:0] <= {2'b00, counter0[9:2]}; // divide by 4
                         RequestWriteBuffer <= 1'b1;
                     end else begin
-                        RequestWriteBuffer <= 1'b0;
-                    end
-                    if (PixelY[2:0] == 3'b000) begin
-                        // 8 rows done, swap buffer
-                        // flip buffer is delayed 10 clocks in bram ctrl, sop we can set it now
-                        FlipBuffer <= ~FlipBuffer;
+                        if (PixelX == 7'd0 && PixelY != 7'd0 && PixelY[2:0] == 3'b000) begin
+                            // last block can be written
+                            BlockBufferDataReady <= 1'b1;
+                        end else begin
+                            BlockBufferDataReady <= 1'b0;
+                        end
                     end
 
-                    counter0[14:0] <= counter0[14:0] + 15'd1;
+                    
                     if (PixelX == 7'd127) begin
                         PixelX <= 7'd0;
-                        PixelY <= PixelY + 7'b1;
+                        if (PixelY[2:0] == 3'b111) begin
+                            // 8 rows done, swap buffer
+                            // flip buffer is delayed 10 clocks in bram ctrl, so we can set it now
+                            FlipBuffer <= ~FlipBuffer;
+                        end
+                        PixelY <= PixelY + 7'd1;
                     end else begin
-                        PixelX <= PixelX + 7'b1;
+                        PixelX <= PixelX + 7'd1;
                     end
-                    if (PixelY <= 7'd127) begin
-                        SampleStart <= 1'b1;
-                    end
-                    fake_data_source <= fake_data_source + 8'b1;
+                    SampleStart <= 1'd1;
+                    debug_counter <= 0;
+                    fake_data_source[7:0] <= {PixelY[6:0], 1'b0}; // debug
                 end
             end
             // normal clock domain
-            if (SampleDone) begin
+            // if (SampleDone && SampleStart) begin
+            //     SampleStart <= 1'b0;
+            //     ByteDataBuffer[7:0] <= {ByteDataBuffer[5:0], SampledValue[1:0]}; // Shift to left
+            // end
+            if (debug_counter != 4'b1111 && SampleStart) begin
+                debug_counter <= debug_counter + 4'd1;
+            end else begin 
                 SampleStart <= 1'b0;
-                ByteDataBuffer[7:0] <= {ByteDataBuffer[5:0], SampledValue[1:0]}; // Shift to left
+                ByteDataBuffer[7:0] <= {ByteDataBuffer[5:0], PixelY[6:5]};
             end
         end
         S_WAIT2: begin
             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
+                BlockBufferDataReady <= 1'b1; // finish last block
                 if (small_counter == 2'd3) begin
                     main_state <= S_RESET1;
                     reset_pulse_send <= 0;
@@ -324,6 +346,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             end
         end
         S_RESET1: begin
+            BlockBufferDataReady <= 1'b0; // finish last block
             if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin
                 if (!reset_pulse_send) begin
                     // sens_reset <= 0;
@@ -338,7 +361,10 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         end
         S_FINISH: begin
             if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin
-                main_state <= S_IDLE;
+                //if (!isGbdWritingRam) begin
+                    main_state <= S_IDLE;
+                    Cam_Capture_Finish <= 1'b0;
+                //end
             end
         end
         default: begin
@@ -351,62 +377,5 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         endcase
     end
 end
-
-
-// always @(negedge sys_resetn or posedge sys_clock) begin
-//     if (!sys_resetn) begin
-//         counter0 <= 0;
-//     end else if (Cam_Capture) begin
-//         if (main_state == S_IDLE) begin
-//             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
-//                 counter0 <= 24'd0;
-//             end
-//         end else if (main_state == S_WAIT0) begin
-//             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0] && counter0 < 24'd32767) begin
-//                 counter0 <= counter0 + 24'd1;
-//             end
-//         end
-//     end
-// end
-
-// always @(negedge sys_resetn or posedge sys_clock) begin
-//     if (!sys_resetn) begin
-//         main_state <= S_IDLE;
-//         config_state <= S_CONFIG_R1;
-//     end else if (Cam_Capture) begin
-//         case (main_state)
-//             S_IDLE: begin
-//                 if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
-//                     main_state <= S_WAIT0;
-//                 end else begin
-//                     main_state <= S_IDLE;
-//                 end
-//             end
-//             S_WAIT0: begin
-//                 if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
-//                     if (counter0 == 24'd32767) begin
-//                         main_state <= S_IDLE;
-//                     end
-//                 end else begin
-//                     main_state <= S_WAIT0;
-//                 end
-//             end
-//             default: main_state <= S_IDLE;
-//         endcase
-//     end
-// end
-
-// always @(negedge sys_resetn or posedge sys_clock) begin
-//     if (!sys_resetn) begin
-//         Cam_Capture_Finish <= 1'b0;
-//     end else begin
-//         if (main_state == S_IDLE && counter0 == 24'd32767) begin
-//             Cam_Capture_Finish <= 1'b1;
-//         end else begin
-//             Cam_Capture_Finish <= 1'b0;
-//         end
-//     end
-// end
-
 endmodule
 `default_nettype wire

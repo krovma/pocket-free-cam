@@ -26,18 +26,18 @@ module ag32gbd_bram_ctrl(
     input               RequestReadReg,
     input       [9:0]   RegReadAddr,
     output reg  [7:0]   RegReadOutput,
-    output reg          RegReadDataReady,
+    output              RegReadDataReady,
 
     input               RequestReadBuffer,
     input       [9:0]   BufferReadOffset,
     output reg  [7:0]   BufferReadOutput,
-    output reg          BufferReadDataReady
+    output              BufferReadDataReady
 );
 
 reg [9:0]   bram_addr_a = 10'h3FF;
 reg [9:0]   bram_addr_b = 10'h3FF;
 reg [7:0]   bram_data_in_a = 8'b0;
-reg [7:0]   bram_data_in_b = 8'b0;
+//reg [7:0]   bram_data_in_b = 8'b0;
 reg         bram_rden_a = 1'b0;
 reg         bram_rden_b = 1'b0;
 reg         bram_wren_a = 1'b0;
@@ -45,12 +45,15 @@ reg         bram_wren_b = 1'b0;
 wire [7:0]  bram_data_out_a;
 wire [7:0]  bram_data_out_b;
 
+reg regBufferReadDataReady;
+reg regRegReadDataReady;
+
 block_ram	block_ram_inst (
 	.address_a ( bram_addr_a ),
 	.address_b ( bram_addr_b ),
 	.clock ( sys_clock ),
 	.data_a ( bram_data_in_a ),
-	.data_b ( bram_data_in_b ),
+	.data_b ( 8'b0 ),
 	.rden_a ( bram_rden_a ),
 	.rden_b ( bram_rden_b ),
 	.wren_a ( bram_wren_a ),
@@ -105,16 +108,16 @@ always @(posedge sys_clock or negedge resetn) begin
         bram_addr_a <= 10'h3FF;
         bram_addr_b <= 10'h3FF;
         bram_data_in_a <= 8'b0;
-        bram_data_in_b <= 8'b0;
+        //bram_data_in_b <= 8'b0;
         bram_rden_a <= 1'b0;
         bram_rden_b <= 1'b0;
         bram_wren_a <= 1'b0;
         bram_wren_b <= 1'b0;
 
         RegReadOutput[7:0] <= 8'b0;
-        RegReadDataReady <= 1'b0;
+        regRegReadDataReady <= 1'b0;
         BufferReadOutput[7:0] <= 8'b0;
-        BufferReadDataReady <= 1'b0;
+        regBufferReadDataReady <= 1'b0;
         WaitRegRead <= 1'b0;
         WaitBufferRead <= 1'b0;
 
@@ -123,16 +126,19 @@ always @(posedge sys_clock or negedge resetn) begin
         if (WaitBufferRead) begin
             BufferReadOutput <= bram_data_out_b;
             WaitBufferRead <= 1'b0;
-            BufferReadDataReady <= 1'b1;
+            regBufferReadDataReady <= 1'b1;
         end else if (!RequestReadBufferEdge[1] && RequestReadBufferEdge[0]) begin
             bram_rden_b <= 1'b1;
             bram_wren_b <= 1'b0;
             bram_addr_b <= BufferPortB + BufferReadOffset;
             WaitBufferRead <= 1'b1;
-            BufferReadDataReady <= 1'b0;
+            regBufferReadDataReady <= 1'b0;
+        end else begin
+            bram_rden_b <= 1'b0;
+            bram_wren_b <= 1'b0;
         end
 
-        if (!RequestWriteRegEdge[1] && RequestReadRegEdge[0]) begin
+        if (!RequestWriteRegEdge[1] && RequestWriteRegEdge[0]) begin
             bram_rden_a <= 1'b0;
             bram_wren_a <= 1'b1;
             bram_addr_a <= RegWriteAddr;
@@ -140,23 +146,41 @@ always @(posedge sys_clock or negedge resetn) begin
         end else if (WaitRegRead) begin
             RegReadOutput <= bram_data_out_a;
             WaitRegRead <= 1'b0;
-            RegReadDataReady <= 1'b1;
+            regRegReadDataReady <= 1'b1;
         end else if (!RequestReadRegEdge[1] && RequestReadRegEdge[0]) begin
             bram_rden_a <= 1'b1;
             bram_wren_a <= 1'b0;
             bram_addr_a <= RegReadAddr;
             WaitRegRead <= 1'b1;
-            RegReadDataReady <= 1'b0;
+            regRegReadDataReady <= 1'b0;
         end else if (!RequestWriteBufferEdge[1] && RequestWriteBufferEdge[0]) begin
             bram_rden_a <= 1'b0;
             bram_wren_a <= 1'b1;
             bram_addr_a <= BufferPortA + BufferWriteOffset;
             bram_data_in_a <= BufferWriteData;
+        end else begin
+            bram_rden_a <= 1'b0;
+            bram_wren_a <= 1'b0;
         end
 
     end // if (!resetn) else
 end // always
 
-endmodule
+reg [15:0] holdRegRegReadDataReady;
+reg [15:0] holdRegBufferReadDataReady;
 
+always @(posedge sys_clock or negedge resetn) begin
+    if (!resetn) begin
+        holdRegBufferReadDataReady <= 16'b0;
+        holdRegRegReadDataReady <= 16'b0;
+    end else begin
+        holdRegBufferReadDataReady <= {holdRegBufferReadDataReady[14:0], regBufferReadDataReady};
+        holdRegRegReadDataReady <= {holdRegRegReadDataReady[14:0], regRegReadDataReady};
+    end 
+end
+
+assign BufferReadDataReady = |holdRegBufferReadDataReady[15:0];
+assign RegReadDataReady = |holdRegRegReadDataReady[15:0];
+
+endmodule
 `default_nettype wire

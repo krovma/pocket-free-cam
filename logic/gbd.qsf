@@ -653,9 +653,6 @@ set_location_assignment LCCOMB_X58_Y5_N6 -to resetn_out
 set_instance_assignment -name GLOBAL_SIGNAL GLOBAL_CLOCK -to sys_resetn
 
 set_global_assignment -name EDA_MAINTAIN_DESIGN_HIERARCHY PARTITION_ONLY -section_id eda_simulation
-set_global_assignment -name PARTITION_COLOR 52377 -section_id rv32 -tag alta_auto
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id rv32 -tag alta_auto
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id rv32 -tag alta_auto
 set_global_assignment -name VERILOG_FILE ag32gbd_sampler.v
 set_global_assignment -name VERILOG_FILE ag32gbd_rom.v
 set_global_assignment -name VERILOG_FILE ag32gbd_reg.v
@@ -667,5 +664,8 @@ set_global_assignment -name VERILOG_FILE gbd.v
 set_global_assignment -name VERILOG_FILE ag32gbd_ip.v
 set_global_assignment -name VERILOG_FILE "C:\\Users\\krovma\\.platformio\\packages\\tool-agrv_logic\\etc\\arch\\rodinia\\alta_sim.v"
 set_global_assignment -name SDC_FILE .\\gbd.sdc
+set_global_assignment -name PARTITION_COLOR 52377 -section_id rv32 -tag alta_auto
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id rv32 -tag alta_auto
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id rv32 -tag alta_auto
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_instance_assignment -name PARTITION_HIERARCHY rv32 -to "alta_rv32:rv32" -section_id rv32
