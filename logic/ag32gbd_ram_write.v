@@ -22,7 +22,6 @@ module ag32gbd_ram_write (
 
     output   reg           RequestReadBuffer,
     output   reg [9:0]     ReadBufferOffset,
-    input                  BufferDataReady,
     input    [7:0]         BufferReadResult
 );
 
@@ -50,7 +49,7 @@ reg [7:0] offset_cnt;
 
 // Writing pattern:
 // x from 00 to 1E in step of 2
-// y from 0 to E in steo of 2
+// y from 0 to E in step of 2
     // read: iajbkcld = buffer[y<<5 + x]
     // read: menfogph = buffer[y<<5 + x + 1]
     // 
@@ -79,7 +78,7 @@ reg [5:0] State;
 reg [7:0] Cache_iajbkcld;
 reg [7:0] Cache_menfogph;
 reg       bWait1;
-reg [2:0] bWait3;
+reg [3:0] Wait12;
 // Data should hold for tDS >= 15ns --> about 1.5 ticks, do 10
 // for second write need to wait for tWZ + tDS about 2.5 ticks, still do 10
 // actually do a tWLA
@@ -92,7 +91,6 @@ always @(negedge nAnyReset or posedge sys_clock) begin
         State <= S_IDLE;
         round_cnt <= 4'b0;
         bWait1 <= 1'b0;
-        bWait3 <= 3'b0;
         bWaitTDS <= 3'b0;
         offset_cnt <= 8'b0;
         Ram_Writing_Addr_Low <= 12'b0;
@@ -117,7 +115,6 @@ always @(negedge nAnyReset or posedge sys_clock) begin
                     Ram_Writing_Data <= 8'b0;
                     Ram_Writing_nWE <= 1'b1;
                     bWait1 <= 1'b0;
-                    bWait3 <= 3'b0;
                     bWaitTDS <= 3'b0;
                     Cache_iajbkcld <= 8'b0;
                     Cache_menfogph <= 8'b0;
@@ -131,91 +128,84 @@ always @(negedge nAnyReset or posedge sys_clock) begin
             S_WORK_READ_0: begin
                 ReadBufferOffset <= {iy[2:0], ix[4:1], 1'b0}; // iy << 5 + ix
                 RequestReadBuffer <= 1'b1;
-                bWait3 <= 3'b0;
                 // transition
                 State <= S_WORK_READ_1;
             end // 1 tick 
             S_WORK_READ_1: begin
-                if (!bWait3[2]) begin
-                    bWait3[2:0] <= {bWait3[1:0], 1'b1}; // wait 3 tick
-                    bWait1 <= 1'b0;
-                end else begin
+                if (!bWait1) begin
                     RequestReadBuffer <= 1'b0;
-                    if (!bWait1) begin
-                        bWait1 <= 1'b1; // wait 1 tick
-                    end else begin
-                        if (BufferDataReady) begin
-                            // first read done
-                            //Cache_iajbkcld <= BufferReadResult;
-                            //Cache_iajbkcld <= {1'b0, round_cnt[3], 1'b0, round_cnt[2],1'b0, round_cnt[1], 1'b0, round_cnt[0]};
-                            //Cache_menfogph <= {1'b0, round_cnt[3], 1'b0, round_cnt[2],1'b0, round_cnt[1], 1'b0, round_cnt[0]};
-                            Cache_iajbkcld <= 8'b_00_00_10_11; 
-                            Cache_menfogph <= {round_cnt[3], 1'b0, round_cnt[2], 1'b0, round_cnt[1], 1'b1, round_cnt[0], 1'b0}; // abcdefgh = 12h ijklmnop=3[round_cnt]h
-                            // prepare second read
-                            ReadBufferOffset <= {iy[2:0], ix[4:1], 1'b1}; // iy << 5 + (ix + 1)
-                            RequestReadBuffer <= 1'b1;
-                            bWait1 <= 1'b0;
-                            bWaitTDS <= 3'b0;
-                            bWait3 <= 0;
-                            // transition
-                            State <= S_WORK_WRITE_0;
-                        end
-                    end
-                end
-            end // 5 ticks
-            S_WORK_WRITE_0: begin
-                if (!bWait3[2]) begin
-                    bWait3[2:0] <= {bWait3[1:0], 1'b1}; // wait 3 tick
-                    bWait1 <= 1'b0;
-                    // wait 3 tick, pre rolling tWZ
-                    // by pull down we, and feed addr
-                    Ram_Writing_nWE <= 1'b0;
+                    bWait1 <= 1'b1; // wait 1 tick
+                    // first read done
+                    Cache_iajbkcld <= BufferReadResult;
                     Ram_Writing_Addr_Low[11:0] <= {round_cnt[3:0], offset_cnt[7:0]};
                 end else begin
-                    RequestReadBuffer <= 1'b0;
-                    if (!bWait1) begin
-                        bWait1 <= 1'b1; // wait 1 tick
-                    end else begin
-                        if (BufferDataReady) begin
-                            // second read done
-                            //Cache_menfogph <= BufferReadResult;
-                            // now we have both cache, write to RAM
-                            // menfogph is not latched yet, use BufferReadResult to fill
-                            Ram_Writing_Data[7:0] <= { 
-                                Cache_iajbkcld  [6], //a
-                                Cache_iajbkcld  [4], //b
-                                Cache_iajbkcld  [2], //c
-                                Cache_iajbkcld  [0], //d
-                                Cache_menfogph  [6], //e
-                                Cache_menfogph  [4], //f
-                                Cache_menfogph  [2], //g
-                                Cache_menfogph  [0]  //h
-                                //BufferReadResult[6], //e
-                                //BufferReadResult[4], //f
-                                //BufferReadResult[2], //g
-                                //BufferReadResult[0]  //h
-                            }; // abcdefgh
-                            bWaitTDS <= 0;
-                            offset_cnt <= offset_cnt + 8'b1; // +1
-                            // transition
-                            State <= S_WORK_WRITE_1;
-                        end 
-                    end 
+                    //if (BufferDataReady) begin
+                        //Cache_iajbkcld <= {1'b0, round_cnt[3], 1'b0, round_cnt[2],1'b0, round_cnt[1], 1'b0, round_cnt[0]};
+                        //Cache_menfogph <= {1'b0, round_cnt[3], 1'b0, round_cnt[2],1'b0, round_cnt[1], 1'b0, round_cnt[0]};
+                        //Cache_iajbkcld <= 8'b_00_00_10_11; 
+                        //Cache_menfogph <= {round_cnt[3], 1'b0, round_cnt[2], 1'b0, round_cnt[1], 1'b1, round_cnt[0], 1'b0}; // abcdefgh = 12h ijklmnop=3[round_cnt]h
+                        // prepare second read
+                        ReadBufferOffset <= {iy[2:0], ix[4:1], 1'b1}; // iy << 5 + (ix + 1)
+                        RequestReadBuffer <= 1'b1;
+                        bWait1 <= 1'b0;
+                        bWaitTDS <= 3'b0;
+                        // transition
+                        Ram_Writing_nWE <= 1'b0;
+                        State <= S_WORK_WRITE_0;
+                   // end
                 end
+
+            end // 5 ticks
+            S_WORK_WRITE_0: begin
+                if (!bWait1) begin
+                    RequestReadBuffer <= 1'b0;
+                    bWait1 <= 1'b1; // wait 1 tick
+                    bWaitTDS <= 0;
+                    Cache_menfogph <= BufferReadResult;
+                end else begin
+                    // second read done
+                    // now we have both cache, write to RAM
+                    if (bWaitTDS != 4'd5) begin
+                        bWaitTDS <= bWaitTDS + 4'd1;  // wait for tDS
+                    end else begin
+                        Ram_Writing_Data[7:0] <= { 
+                            Cache_iajbkcld [6], //a
+                            Cache_iajbkcld [4], //b
+                            Cache_iajbkcld [2], //c
+                            Cache_iajbkcld [0], //d
+                            Cache_menfogph [6], //e
+                            Cache_menfogph [4], //f
+                            Cache_menfogph [2], //g
+                            Cache_menfogph [0]  //h
+                        }; // abcdefgh
+                        bWaitTDS <= 0;
+                        offset_cnt <= offset_cnt + 8'b1; // +1
+                        // transition
+                        State <= S_WORK_WRITE_1;
+                    end
+
+                end 
+
             end // 5 ticks
             S_WORK_WRITE_1: begin
                 if (bWaitTDS != 4'd10) begin
                     bWaitTDS <= bWaitTDS + 4'd1;  // wait for tDS
-                    bWait3 <= 0;
+                    Wait12 <= 0;
                 end else begin
                     // done writing one byte
-                    Ram_Writing_nWE <= 1'b1; // pull up ~WE, data latched
                     // wait for tWX = 5ns --> 1 tick
-                    if (!bWait3[2]) begin
-                        bWait3 <= {bWait3[1:0], 1'b1};
+                    if (Wait12 < 4'd10) begin
+                        Wait12 <= Wait12 + 4'd1;
+                        if (Wait12 >= 4'd2) begin
+                            Ram_Writing_Addr_Low[11:0] <= {round_cnt[3:0], offset_cnt[7:0]};
+                        end
+                        if (Wait12 >= 4'd5) begin
+                            Ram_Writing_nWE <= 1'b0;
+                        end else begin
+                            Ram_Writing_nWE <= 1'b1; // pull up ~WE, data latched
+                        end
                     end else begin
                         Ram_Writing_nWE <= 1'b0;
-                        Ram_Writing_Addr_Low[11:0] <= {round_cnt[3:0], offset_cnt[7:0]};
                         Ram_Writing_Data[7:0] <= { 
                             Cache_iajbkcld [7], //i
                             Cache_iajbkcld [5], //j
@@ -240,13 +230,13 @@ always @(negedge nAnyReset or posedge sys_clock) begin
                     bWait1 <= 0;
                 end else begin
                     Ram_Writing_nWE <= 1'b1;
-                    if (ix == 5'h1E) begin
-                        // end of row
-                        ix <= 5'b0;
-                        if (iy == 3'd7) begin
+                    if (iy == 3'd7) begin
+                        // end of column
+                        iy <= 3'd0;
+                        if (ix == 5'h1E) begin
                             // end of buffer
                             // all done
-                            iy <= 3'd0;
+                            ix <= 5'd0;
                             Ram_Writing_nCS <= 1'b1; // ~CE to HIGH
                             Ram_Writing_nWE <= 1'b1;
                             Ram_Writing_Addr_Low <= 12'b0;
@@ -254,11 +244,11 @@ always @(negedge nAnyReset or posedge sys_clock) begin
                             round_cnt <= round_cnt + 4'd1; // round + 1
                             State <= S_IDLE;
                         end else begin
-                            iy <= iy + 1'd1;
+                            ix <= ix + 5'd2;
                             State <= S_WORK_READ_0;
                         end
                     end else begin
-                        ix <= ix + 5'd2;
+                        iy <= iy + 3'd1;
                         State <= S_WORK_READ_0;
                     end
                 end

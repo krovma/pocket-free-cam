@@ -61,11 +61,14 @@ module ag32gbd_cam (
     output              RequestReadReg,
     output      [9:0]   RegReadAddr,
     input       [7:0]   RegReadOutput,
-    input               RegReadDataReady,
+    //input               RegReadDataReady,
     // to Ram writer
     input               isGbdWritingRam,
     output reg          RamNewRun,
     output reg          BlockBufferDataReady,
+
+    // debug
+    output debug_sample_done,
 
     output Sens_XCK,
     output reg Cam_Capture_Finish
@@ -145,15 +148,15 @@ reg [6:0] PixelX;
 reg [6:0] PixelY;
 reg SampleStart;
 wire SampleDone;
-wire [2:0] SampledValue;
+wire [1:0] SampledValue;
 reg [7:0] fake_data_source;
+reg bHoldRequestWriteBuffer;
 
 ag32gbd_sampler sampler_inst (
     .PixelX(PixelX),
     .PixelY(PixelY),
     .SampleStart(SampleStart),
     .RegReadOutput(RegReadOutput),
-    .RegReadDataReady(RegReadDataReady),
     .RequestReadReg(RequestReadReg),
     .RegReadAddr(RegReadAddr),
     .SampleDone(SampleDone),
@@ -162,6 +165,8 @@ ag32gbd_sampler sampler_inst (
     .sys_clock(sys_clock),
     .FakeResultValue(fake_data_source)
 );
+
+assign debug_sample_done = SampleDone;
 
 reg [7:0] ByteDataBuffer;
 
@@ -174,8 +179,6 @@ reg [1:0] small_counter;
 reg reset_pulse_send;
 
 reg [18:0] exposure_counter;
-
-reg [3:0] debug_counter;
 
 always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
@@ -192,6 +195,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         PixelY <= 0;
         SampleStart <= 0;
         ByteDataBuffer <= 0;
+        bHoldRequestWriteBuffer <= 0;
         // outputs
         FlipBuffer <= 0;
         BufferWriteData <= 0;
@@ -211,6 +215,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         end
         S_RESET0: begin
             RamNewRun <= 1'b1;
+            FlipBuffer <= 0;
             // pseudo wait 1clk
             if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin // set at negedge, reset signal is read at posedge of xck
                 if (!reset_pulse_send) begin
@@ -267,13 +272,15 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         S_WAIT1: begin
             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
                 if (small_counter == 2'd1) begin
-                    main_state <= S_READ;
-                    PixelX <= 0;
+                    //PixelX <= Nbit ? 7'd1 : 0;
                     PixelY <= 0;
+                    PixelY <= Nbit ? 7'd1 : 7'd0;
                     SampleStart <= 1'b1;
                     counter0 <= 0;
-                    //debug
-                    debug_counter <= 0;
+                    RequestWriteBuffer <= 0;
+                    // transition
+                    main_state <= S_READ;
+                    // debug
                     fake_data_source <= 0;
                     
                 end else begin
@@ -282,6 +289,15 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             end
         end
         S_READ: begin
+            //fake_data_source[7:0] <= {PixelX[6:3], PixelX[3], PixelX[3], PixelX[3], PixelX[3]};
+            fake_data_source[7:0] <= {Reg_A002[2:0],Reg_A003[7:3]} + counter0[7:0];
+            //fake_data_source <= {Reg_A002[2:1], Reg_A003[7:6], counter0[3:0]};
+            // fake_data_source <=
+            //     Reg_A002 > 8'b0010_0000 ? {2'b11, PixelX[5:0]} : (
+            //         Reg_A002 > 8'b0001_00000 ? {1'b1, PixelX[6:0]} : (
+            //             Reg_A002 > 8'b0000_1000 ? {2'b00, PixelX[5:0]} : {3'b000, PixelX[4:0]}
+            //         )
+            //     );
             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
                 if (counter0[14:0] == (Nbit ? 15'd16128 : 15'd16384)) begin
                     main_state <= S_WAIT2;
@@ -294,17 +310,20 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                     if (PixelX[1:0] == 2'b11) begin
                         // 4 pixels done, write to bram
                         BufferWriteData <= ByteDataBuffer;
-                        BufferWriteOffset[9:0] <= {2'b00, counter0[9:2]}; // divide by 4
+                        //BufferWriteData <= 8'hE4;
+                        //BufferWriteData <= {3'b0, PixelX[6:2]};
+                        //BufferWriteData <= {1'b0, PixelY[6:0]};
+                        BufferWriteOffset[9:0] <= {2'b00, PixelY[2:0], PixelX[6:2]};
                         RequestWriteBuffer <= 1'b1;
+                        bHoldRequestWriteBuffer <= 0;
                     end else begin
                         if (PixelX == 7'd0 && PixelY != 7'd0 && PixelY[2:0] == 3'b000) begin
                             // last block can be written
                             BlockBufferDataReady <= 1'b1;
                         end else begin
-                            BlockBufferDataReady <= 1'b0;
+                            BlockBufferDataReady <= 0;
                         end
                     end
-
                     
                     if (PixelX == 7'd127) begin
                         PixelX <= 7'd0;
@@ -318,20 +337,20 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                         PixelX <= PixelX + 7'd1;
                     end
                     SampleStart <= 1'd1;
-                    debug_counter <= 0;
-                    fake_data_source[7:0] <= {PixelY[6:0], 1'b0}; // debug
                 end
             end
             // normal clock domain
-            // if (SampleDone && SampleStart) begin
-            //     SampleStart <= 1'b0;
-            //     ByteDataBuffer[7:0] <= {ByteDataBuffer[5:0], SampledValue[1:0]}; // Shift to left
-            // end
-            if (debug_counter != 4'b1111 && SampleStart) begin
-                debug_counter <= debug_counter + 4'd1;
-            end else begin 
+            if (SampleDone && SampleStart) begin
                 SampleStart <= 1'b0;
-                ByteDataBuffer[7:0] <= {ByteDataBuffer[5:0], PixelY[6:5]};
+                ByteDataBuffer[7:0] <= {ByteDataBuffer[5:0], SampledValue[1:0]}; // Shift to left
+            end
+            
+            if (RequestWriteBuffer) begin
+                if (!bHoldRequestWriteBuffer) begin
+                    bHoldRequestWriteBuffer <= 1'b1;
+                end else begin
+                    RequestWriteBuffer <= 0;
+                end
             end
         end
         S_WAIT2: begin

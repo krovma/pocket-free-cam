@@ -86,7 +86,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         Reg_A005 <= 8'b0;
     end else begin
         if (Bram_Req_Write) begin
-            if (bram_signal_reset_cnt == 3'd7) begin
+            if (bram_signal_reset_cnt == 3'd1) begin
                 bram_signal_reset_cnt <= 3'b0;
                 Bram_Req_Write <= 1'b0;
                 Bram_Data <= 8'b0;
@@ -106,6 +106,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                         7'h05: Reg_A005[7:0] <= Cart_d[7:0];
                         default: begin
                             Bram_Req_Write <= 1'b1;
+                            bram_signal_reset_cnt <= 3'b0;
                             Bram_Addr <= RegAddrToBramAddr(reg_addr);
                             Bram_Data <= Cart_d[7:0];
                         end

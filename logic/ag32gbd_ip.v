@@ -172,11 +172,11 @@ wire    [9:0]   BufferWriteOffset;
 wire            RequestReadReg;
 wire    [9:0]   RegReadAddr;
 wire    [7:0]   RegReadOutput;
-wire            RegReadDataReady;
+//wire            RegReadDataReady;
 wire            RequestReadBuffer;
 wire    [9:0]   BufferReadOffset;
 wire    [7:0]   BufferReadOutput;
-wire            BufferReadDataReady;
+//wire            BufferReadDataReady;
 
 ag32gbd_bram_ctrl gbdbram_ctrl(
     .sys_clock(sys_clock),
@@ -192,11 +192,11 @@ ag32gbd_bram_ctrl gbdbram_ctrl(
     .RequestReadReg(RequestReadReg),
     .RegReadAddr(RegReadAddr),
     .RegReadOutput(RegReadOutput),
-    .RegReadDataReady(RegReadDataReady),
+    //.RegReadDataReady(RegReadDataReady),
     .RequestReadBuffer(RequestReadBuffer),
     .BufferReadOffset(BufferReadOffset),
-    .BufferReadOutput(BufferReadOutput),
-    .BufferReadDataReady(BufferReadDataReady)
+    .BufferReadOutput(BufferReadOutput)
+    //.BufferReadDataReady(BufferReadDataReady)
 );
 
 
@@ -220,7 +220,6 @@ ag32gbd_ram_write gbdram_write(
 
     .RequestReadBuffer(RequestReadBuffer),
     .ReadBufferOffset(BufferReadOffset),
-    .BufferDataReady(BufferReadDataReady),
     .BufferReadResult(BufferReadOutput)
 );
 
@@ -263,6 +262,8 @@ ag32gbd_reg gbdreg(
     .Sig_CamCaptureFinish(Flag_CamCaptureFinish)
 );
 
+wire top_debug_sample_done;
+
 ag32gbd_cam gbdcam(
     .Cam_Capture(Flag_CamCapture),
     .Cart_CLK(top_CLK),
@@ -282,12 +283,13 @@ ag32gbd_cam gbdcam(
     .RequestReadReg(RequestReadReg),
     .RegReadAddr(RegReadAddr),
     .RegReadOutput(RegReadOutput),
-    .RegReadDataReady(RegReadDataReady),
 
     .FlipBuffer(FlipBuffer),
     .BufferWriteData(BufferWriteData),
     .BufferWriteOffset(BufferWriteOffset),
     .RequestWriteBuffer(RequestWriteBuffer),
+
+    .debug_sample_done(top_debug_sample_done),
 
     .isGbdWritingRam(top_isGbdWritingRam),
     .RamNewRun(top_ramNewRunReset),
@@ -315,6 +317,8 @@ end
 assign top_nLED_REC = ~Flag_CamCapture;
 assign top_nLED_RAMIO = ~top_isGbdWritingRam;
 //assign top_nLED_RAMIO = ~isReadingRAM;
+//assign top_nLED_RAMIO = ~top_debug_sample_done;
+//assign top_nLED_RAMIO = top_RAM_nWE;
 
 assign top_SENS_SIN = Flag_CamCaptureFinish;
 // assign sens_start = bus_clock;

@@ -37,6 +37,9 @@ probe3Pad=
 probe4From=
 probe4Pad=
 
+[MainWindow]
+recentFile.0=
+
 [GuiProgramScreen]
 hardwareId=0
 blasterSpeed=70
@@ -52,6 +55,3 @@ eraseTo=
 binFile=
 readFrom=
 readTo=
-
-[MainWindow]
-recentFile.0=
