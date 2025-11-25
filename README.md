@@ -20,7 +20,7 @@ RAM: FM28V100
 # Credit
 本项目大量参考了 AntonioND 的[卡带原理逆向](https://github.com/AntonioND/gbcam-rev-engineer)，Raphael-Boichot 的[存档解析](https://github.com/Raphael-Boichot/Inject-pictures-in-your-Game-Boy-Camera-saves/tree/main)。
 
-[Mori](https://oshwhub.com/morinaka/works) 对元件选型和硬件设计提供大量帮助，主要来自ChisFlash MBC5项目。(linscon)[https://oshwhub.com/linscon/works]亦提供了开发上的一些建议。
+[Mori](https://oshwhub.com/morinaka/works) 对元件选型和硬件设计提供大量帮助，主要来自ChisFlash MBC5项目。[linscon](https://oshwhub.com/linscon/works)亦提供了开发上的一些建议。
 
 This project is based on AntonioND's marvelous reverse job [gbcam-rev-engineer](https://github.com/AntonioND/gbcam-rev-engineer), and Raphael-Boichot's research on sav file [Inject-pictures-in-your-Game-Boy-Camera-saves](https://github.com/Raphael-Boichot/Inject-pictures-in-your-Game-Boy-Camera-saves/tree/main)
 [Mori](https://oshwhub.com/morinaka/works) provided his help on chip selection and hardware design, mostly from the [ChisFlash MBC5 project](https://oshwhub.com/morinaka/chisflash-mbc5-gbc-shao-lu-ka).
