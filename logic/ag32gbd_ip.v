@@ -26,7 +26,7 @@ module ag32gbd_ip (
     input              top_nWR,
     // AG32 BOARD
     input              sys_clock,
-    input              bus_clock,
+    input              bus_clock, // for adc
     input              resetn,
     input              stop,
     input       [1:0]  mem_ahb_htrans,
@@ -206,7 +206,6 @@ wire top_ramNewRunReset;
 ag32gbd_ram_write gbdram_write(
     .sys_resetn(resetn),
     .sys_clock(sys_clock),
-    .bus_clock(bus_clock),
     .cart_CLK(top_CLK),
 
     .NewRunReset(top_ramNewRunReset),
@@ -262,8 +261,6 @@ ag32gbd_reg gbdreg(
     .Sig_CamCaptureFinish(Flag_CamCaptureFinish)
 );
 
-wire top_debug_sample_done;
-
 ag32gbd_cam gbdcam(
     .Cam_Capture(Flag_CamCapture),
     .Cart_CLK(top_CLK),
@@ -275,6 +272,7 @@ ag32gbd_cam gbdcam(
     .Reg_A005(Reg_A005),
 
     .sys_clock(sys_clock),
+    .adc_clock(bus_clock),
     .sys_resetn(resetn),
 
     .Sens_XCK(top_SENS_XCK),
@@ -288,8 +286,6 @@ ag32gbd_cam gbdcam(
     .BufferWriteData(BufferWriteData),
     .BufferWriteOffset(BufferWriteOffset),
     .RequestWriteBuffer(RequestWriteBuffer),
-
-    .debug_sample_done(top_debug_sample_done),
 
     .isGbdWritingRam(top_isGbdWritingRam),
     .RamNewRun(top_ramNewRunReset),
@@ -319,10 +315,6 @@ assign top_nLED_RAMIO = ~top_isGbdWritingRam;
 //assign top_nLED_RAMIO = ~isReadingRAM;
 //assign top_nLED_RAMIO = ~top_debug_sample_done;
 //assign top_nLED_RAMIO = top_RAM_nWE;
-
-assign top_SENS_SIN = Flag_CamCaptureFinish;
-// assign sens_start = bus_clock;
-assign top_SENS_LOAD = sys_clock_x10;
 
 //output assignments
 wire isReadingReg = Reg_OutputValid;

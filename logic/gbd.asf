@@ -11,3 +11,5 @@ if { [info exists USB0_MODE] } {
 }
 # pio_end    <<<<<< DO NOT MODIFY THIS SECTION! <<<<<<
 
+set_instance_assignment -extension -name FIXED_COORD -to macro_inst|gbdcam|sampler_inst|adc_inst {22 7}
+

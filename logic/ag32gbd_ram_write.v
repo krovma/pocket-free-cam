@@ -7,7 +7,6 @@
 
 module ag32gbd_ram_write (
     input                 sys_clock,
-    input                 bus_clock,
     input                 cart_CLK,
     input                 sys_resetn,
 

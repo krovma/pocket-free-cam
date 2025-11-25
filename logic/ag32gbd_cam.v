@@ -50,6 +50,7 @@ module ag32gbd_cam (
     input [7:0] Reg_A005,
 
     input sys_clock,
+    input adc_clock,
     input sys_resetn,
 
     // to bram
@@ -66,9 +67,6 @@ module ag32gbd_cam (
     input               isGbdWritingRam,
     output reg          RamNewRun,
     output reg          BlockBufferDataReady,
-
-    // debug
-    output debug_sample_done,
 
     output Sens_XCK,
     output reg Cam_Capture_Finish
@@ -153,20 +151,24 @@ reg [7:0] fake_data_source;
 reg bHoldRequestWriteBuffer;
 
 ag32gbd_sampler sampler_inst (
+    .sys_resetn(sys_resetn),
+    .sys_clock(sys_clock),
+    .adc_clock(adc_clock),
+
+    .SampleStart(SampleStart),
+    .SampleDone(SampleDone),
     .PixelX(PixelX),
     .PixelY(PixelY),
-    .SampleStart(SampleStart),
+    .SampledValue(SampledValue),
+
     .RegReadOutput(RegReadOutput),
     .RequestReadReg(RequestReadReg),
     .RegReadAddr(RegReadAddr),
-    .SampleDone(SampleDone),
-    .SampledValue(SampledValue),
-    .sys_resetn(sys_resetn),
-    .sys_clock(sys_clock),
+    
     .FakeResultValue(fake_data_source)
 );
 
-assign debug_sample_done = SampleDone;
+//assign debug_sample_done = SampleDone;
 
 reg [7:0] ByteDataBuffer;
 

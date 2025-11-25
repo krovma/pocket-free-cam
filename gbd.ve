@@ -1,5 +1,5 @@
 SYSCLK 100
-BUSCLK 25
+BUSCLK 12.5
 PLL_CLKIN PIN_OSC # Use internal clock @100MHz
 
 #####################
