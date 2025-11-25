@@ -1,43 +1,6 @@
 `default_nettype none
 `timescale 1ps/1ps
 
-// camera capture control
-/*
- * ┌───────┐   phi up         ┌───────┐  phi up           ┌─────────────────────────────────────────────────────────────┐
- * │ Idle  ├─────────────────►│1:reset├──────────────────►│2:config regs│                                               │
- * └───────┘                  └───────┘                   │─────────────┘                                               │
- *                        reset=0 on phi down             │                                                             │
- *                        reset=1 on phi up               │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        │                                                             │
- *                                                        └─────────────────────────────────────────────────────────────┘
- */
-
 module ag32gbd_cam (
     input Cam_Capture,
     input Cart_CLK,
@@ -68,7 +31,12 @@ module ag32gbd_cam (
     output reg          RamNewRun,
     output reg          BlockBufferDataReady,
 
+    output reg Sens_START,
+    output reg Sens_SIN,
+    output reg Sens_LOAD,
+    output reg Sens_RESET,
     output Sens_XCK,
+    output reg Sens_READ,
     output reg Cam_Capture_Finish
 );
 
@@ -76,6 +44,42 @@ module ag32gbd_cam (
 wire [18:0] exposure_steps_xck = {Reg_A002[7:0], Reg_A003[7:0], 3'b000}; // (A002 << 8 + A003) * 8
 wire Nbit = Reg_A001[7];
 //wire [15:0] reading_xck = Nbit ? 15'd16128 : 15'd16384;
+
+function [7:0] Reg4;
+    input [2:0] theA000;
+    begin
+        case(theA000)
+        3'b001: Reg4 = 8'h00;
+        3'b011: Reg4 = 8'h01;
+        3'b101: Reg4 = 8'h01;
+        3'b111: Reg4 = 8'h01;
+        default:Reg4 = 8'h00;
+        endcase
+    end
+endfunction
+
+function [7:0] Reg5;
+    input [2:0] theA000;
+    begin
+        case(theA000)
+        3'b001: Reg5 = 8'h01;
+        3'b011: Reg5 = 8'h00;
+        3'b101: Reg5 = 8'h02;
+        3'b111: Reg5 = 8'h02;
+        default:Reg5 = 8'h01;
+        endcase
+    end
+endfunction
+
+wire [10:0] DataReg1 = {3'b001, Reg_A001[7:0]};
+wire [10:0] DataReg2 = {3'b010, Reg_A002[7:0]};
+wire [10:0] DataReg3 = {3'b011, Reg_A003[7:0]};
+wire [10:0] DataReg4 = {3'b100, Reg4(Reg_A000)}; //P
+wire [10:0] DataReg5 = {3'b101, Reg5(Reg_A000)}; //M
+wire [10:0] DataReg6 = {3'b110, 8'h01}; //X
+wire [10:0] DataReg7 = {3'b111, Reg_A004[7:0]};
+wire [10:0] DataReg0 = {3'b000, Reg_A005[7:0]};
+
 
 //states
 localparam  S_IDLE      = 11'b1_00000_00000;
@@ -99,6 +103,7 @@ localparam  S_CONFIG_R6 = 3'b110;
 localparam  S_CONFIG_R7 = 3'b111;
 localparam  S_CONFIG_R0 = 3'b000;
 
+localparam  S_CONFIG_BIT_A2 = 11'b1_00000_00000;
 localparam  S_CONFIG_BIT_A1 = 11'b0_10000_00000;
 localparam  S_CONFIG_BIT_A0 = 11'b0_01000_00000;
 localparam  S_CONFIG_BIT_D7 = 11'b0_00100_00000;
@@ -109,7 +114,6 @@ localparam  S_CONFIG_BIT_D3 = 11'b0_00000_01000;
 localparam  S_CONFIG_BIT_D2 = 11'b0_00000_00100;
 localparam  S_CONFIG_BIT_D1 = 11'b0_00000_00010;
 localparam  S_CONFIG_BIT_D0 = 11'b0_00000_00001;
-localparam  S_CONFIG_BIT_A2 = 11'b1_00000_00000;
 ////////////////////////////////////////////
 
 // divide clk into xck
@@ -147,7 +151,7 @@ reg [6:0] PixelY;
 reg SampleStart;
 wire SampleDone;
 wire [1:0] SampledValue;
-reg [7:0] fake_data_source;
+//reg [7:0] fake_data_source;
 reg bHoldRequestWriteBuffer;
 
 ag32gbd_sampler sampler_inst (
@@ -165,7 +169,7 @@ ag32gbd_sampler sampler_inst (
     .RequestReadReg(RequestReadReg),
     .RegReadAddr(RegReadAddr),
     
-    .FakeResultValue(fake_data_source)
+    //.FakeResultValue(fake_data_source)
 );
 
 //assign debug_sample_done = SampleDone;
@@ -173,26 +177,25 @@ ag32gbd_sampler sampler_inst (
 reg [7:0] ByteDataBuffer;
 
 // camera state machine do nothing if cam_capture is 0
+reg reset_pulse_send;
 reg [10:0] main_state;
 reg [2:0] config_state;
 reg [10:0] config_bit_state;
-reg [23:0] counter0;
+reg need_load_sig;
+reg [23:0] counter_read;
 reg [1:0] small_counter;
-reg reset_pulse_send;
-
 reg [18:0] exposure_counter;
 
 always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
         // internal states
-        counter0 <= 0;
+        counter_read <= 0;
         exposure_counter <= 0;
         main_state <= S_IDLE;
         config_state <= S_CONFIG_R1;
         reset_pulse_send <= 0;
-
+        need_load_sig <= 0;
         //sampler
-        fake_data_source <= 0;
         PixelX <= 0;
         PixelY <= 0;
         SampleStart <= 0;
@@ -207,30 +210,41 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         Cam_Capture_Finish <= 0;
         RamNewRun <= 0;
 
+        // sensor
+        Sens_START <= 0;
+        Sens_SIN <= 0;
+        Sens_LOAD <= 0;
+        Sens_RESET <= 1'b1;
+        Sens_READ <= 0;
+
     end else if (Cam_Capture) begin
         case(main_state)
         S_IDLE: begin
             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin // sync at posedge of xck
                 main_state <= S_RESET0;
                 Cam_Capture_Finish <= 1'b0;
+                Sens_START <= 0;
+                Sens_SIN <= 0;
+                Sens_LOAD <= 0;
+                Sens_RESET <= 1'b1;
+                Sens_READ <= 0;
             end
         end
         S_RESET0: begin
             RamNewRun <= 1'b1;
             FlipBuffer <= 0;
-            // pseudo wait 1clk
             if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin // set at negedge, reset signal is read at posedge of xck
                 if (!reset_pulse_send) begin
-                    // sens_reset <= 0;
-                    reset_pulse_send <= 1;
+                    Sens_RESET <= 0;
+                    reset_pulse_send <= 1'b1;
                 end else begin
-                    // sens_reset <= 1;
+                    Sens_RESET <= 1'b1;
+                    counter_read <= 0;
+                    Sens_LOAD <= 0;
+                    need_load_sig <= 0;
                     main_state <= S_CONFIG;
                     config_state <= S_CONFIG_R1;
-                    config_bit_state <= S_CONFIG_BIT_A1;
-                    // also prepare first bit to configure (A2 of reg1), this also happens in later configure operations
-                    // sens_sin <= a2;
-                    counter0 <= 0;//for debug
+                    config_bit_state <= S_CONFIG_BIT_A2;
                 end
             end
         end
@@ -238,30 +252,78 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             RamNewRun <= 1'b0;
             // data latch at posedge of xck, load latch at negedge of xck
             // load should be high for at least 0.8us, which is half of xck
-            // we need clk signal to handle this behavior, also recall that xck and clk sync at clk posedge
+            // we need clk signal to handle this behavior, also as a remind here that xck and clk sync at clk posedge
             // xck negedge : prepare next bit per config_bit_state, if load pulse set, prepare to reset it at next negedge of clk.
             // xck posedge : if current bit_state is d0, prepare for load signal at next negedge of clk. Advance bit_state, if S_CONFIG_R0 now, prepare to next main_state.
             // clk negedge : if load signal need to be set, set it; if load signal was set, reset it. check if need to advance to next main_state.
-            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
-                if (counter0 == 24'd88) begin
-                    main_state <= S_WAIT0;
+            if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin // xck neg
+                case(config_state)
+                    S_CONFIG_R1: Sens_SIN <= | (DataReg1[10:0] & config_bit_state[10:0]);
+                    S_CONFIG_R2: Sens_SIN <= | (DataReg2[10:0] & config_bit_state[10:0]);
+                    S_CONFIG_R3: Sens_SIN <= | (DataReg3[10:0] & config_bit_state[10:0]);
+                    S_CONFIG_R4: Sens_SIN <= | (DataReg4[10:0] & config_bit_state[10:0]);
+                    S_CONFIG_R5: Sens_SIN <= | (DataReg5[10:0] & config_bit_state[10:0]);
+                    S_CONFIG_R6: Sens_SIN <= | (DataReg6[10:0] & config_bit_state[10:0]);
+                    S_CONFIG_R7: Sens_SIN <= | (DataReg7[10:0] & config_bit_state[10:0]);
+                    S_CONFIG_R0: Sens_SIN <= | (DataReg0[10:0] & config_bit_state[10:0]);
+                    default: Sens_SIN <= 0;
+                endcase
+            end else if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin // xck pos
+                if (config_bit_state == S_CONFIG_BIT_D0) begin
+                    if (config_state != S_CONFIG_R0) begin
+                        config_bit_state <= S_CONFIG_BIT_A2;
+                    end
+                    case(config_state)
+                        S_CONFIG_R1: config_state <= S_CONFIG_R2;
+                        S_CONFIG_R2: config_state <= S_CONFIG_R3;
+                        S_CONFIG_R3: config_state <= S_CONFIG_R4;
+                        S_CONFIG_R4: config_state <= S_CONFIG_R5;
+                        S_CONFIG_R5: config_state <= S_CONFIG_R6;
+                        S_CONFIG_R6: config_state <= S_CONFIG_R7;
+                        S_CONFIG_R7: config_state <= S_CONFIG_R0;
+                        S_CONFIG_R0: config_state <= S_CONFIG_R0;
+                        default: config_state <= S_CONFIG_R0;
+                    endcase
+                    need_load_sig <= 1'b1;
                 end else begin
-                    counter0 <= counter0 + 24'd1;
+                    config_bit_state  <= config_bit_state >> 1;
+                end
+            end
+            if (Last_CLK_Reg[1] && !Last_CLK_Reg[0]) begin //clk neg
+                if (need_load_sig) begin
+                    Sens_LOAD <= 1'b1;
+                    need_load_sig <= 0;
+                end
+                if (Sens_LOAD) begin
+                    Sens_LOAD <= 0;
+                    if (config_bit_state == S_CONFIG_BIT_D0 && config_state == S_CONFIG_R0) begin
+                        main_state <= S_WAIT0;
+                    end
                 end
             end
         end
         S_WAIT0: begin
             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
                 main_state <= S_START;
+                exposure_counter <= 0;
+                Sens_START <= 0;
             end
         end
+        // set start at negedge of clk, reset and advance at next negedge
         S_START: begin
-            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
-                main_state <= S_EXPOSURE;
-                exposure_counter <= 0;
+            if (!Last_CLK_Reg[1] && Last_CLK_Reg[0]) begin
+                if (!Sens_START) begin
+                    Sens_START <= 1'b1;
+                    exposure_counter <= 0;
+                end else begin
+                    Sens_START <= 0;
+                    exposure_counter = exposure_counter + 19'b1;
+                    main_state <= S_EXPOSURE;
+                end
             end
         end
         S_EXPOSURE: begin
+            Sens_READ <= 0;
             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
                 if (exposure_counter == exposure_steps_xck) begin
                     main_state <= S_WAIT1;
@@ -278,13 +340,11 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                     PixelY <= 0;
                     PixelY <= Nbit ? 7'd1 : 7'd0;
                     SampleStart <= 1'b1;
-                    counter0 <= 0;
+                    counter_read <= 0;
                     RequestWriteBuffer <= 0;
+                    Sens_READ <= 1'b1;
                     // transition
-                    main_state <= S_READ;
-                    // debug
-                    fake_data_source <= 0;
-                    
+                    main_state <= S_READ;             
                 end else begin
                     small_counter <= 2'd1;
                 end
@@ -292,22 +352,23 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         end
         S_READ: begin
             //fake_data_source[7:0] <= {PixelX[6:3], PixelX[3], PixelX[3], PixelX[3], PixelX[3]};
-            fake_data_source[7:0] <= {Reg_A002[2:0],Reg_A003[7:3]} + counter0[7:0];
-            //fake_data_source <= {Reg_A002[2:1], Reg_A003[7:6], counter0[3:0]};
+            //fake_data_source[7:0] <= {Reg_A002[2:0],Reg_A003[7:3]} + counter_read[7:0];
+            //fake_data_source <= {Reg_A002[2:1], Reg_A003[7:6], counter_read[3:0]};
             // fake_data_source <=
             //     Reg_A002 > 8'b0010_0000 ? {2'b11, PixelX[5:0]} : (
             //         Reg_A002 > 8'b0001_00000 ? {1'b1, PixelX[6:0]} : (
             //             Reg_A002 > 8'b0000_1000 ? {2'b00, PixelX[5:0]} : {3'b000, PixelX[4:0]}
             //         )
             //     );
-            if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
-                if (counter0[14:0] == (Nbit ? 15'd16128 : 15'd16384)) begin
-                    main_state <= S_WAIT2;
+            if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin
+                if (counter_read[14:0] == (Nbit ? 15'd16128 : 15'd16384)) begin
                     small_counter <= 0;
                     FlipBuffer <= ~FlipBuffer;
                     BlockBufferDataReady <= 1'b0;
+                    Sens_READ <= 0;
+                    main_state <= S_WAIT2;
                 end else begin
-                    counter0[14:0] <= counter0[14:0] + 15'd1;
+                    counter_read[14:0] <= counter_read[14:0] + 15'd1;
                     // assume this is the end of one pixel read
                     if (PixelX[1:0] == 2'b11) begin
                         // 4 pixels done, write to bram
@@ -370,10 +431,10 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             BlockBufferDataReady <= 1'b0; // finish last block
             if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin
                 if (!reset_pulse_send) begin
-                    // sens_reset <= 0;
-                    reset_pulse_send <= 1;
+                    Sens_RESET <= 0;
+                    reset_pulse_send <= 1'b1;
                 end else begin
-                    // sens_reset <= 1;
+                    Sens_RESET <= 1'b1;
                     main_state <= S_FINISH;
                     small_counter <= 0;
                     Cam_Capture_Finish <= 1'b1;
@@ -389,10 +450,11 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             end
         end
         default: begin
-            counter0 <= 0;
+            counter_read <= 0;
             exposure_counter <= 0; 
             main_state <= S_IDLE;
             config_state <= S_CONFIG_R1;
+            config_bit_state <= S_CONFIG_BIT_A2;
             Cam_Capture_Finish <= 1'b0;
         end
         endcase

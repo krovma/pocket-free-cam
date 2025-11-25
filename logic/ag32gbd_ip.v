@@ -275,7 +275,12 @@ ag32gbd_cam gbdcam(
     .adc_clock(bus_clock),
     .sys_resetn(resetn),
 
+    .Sens_START(top_SENS_START),
+    .Sens_SIN(top_SENS_SIN),
+    .Sens_LOAD(top_SENS_LOAD),
+    .Sens_RESET(top_SENS_RESET),
     .Sens_XCK(top_SENS_XCK),
+    .Sens_READ(top_SENS_READ),
     .Cam_Capture_Finish(Flag_CamCaptureFinish),
 
     .RequestReadReg(RequestReadReg),

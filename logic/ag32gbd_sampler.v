@@ -16,9 +16,7 @@ module ag32gbd_sampler(
     input      [7:0]    RegReadOutput,
 
     output              SampleDone,
-    output reg [1:0]    SampledValue,
-
-    input [7:0] FakeResultValue
+    output reg [1:0]    SampledValue
 );
 
 reg adc_en;
