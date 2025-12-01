@@ -1,10 +1,10 @@
-`default_nettype none
+//`default_nettype none
 `timescale 1ps/1ps
 
 // sample a single pixel
 module ag32gbd_sampler(
-    input sys_clock,
-    input adc_clock,
+    input sys_clock,  // 100MHz
+    input adc_clock,  // 12.5MHz
     input sys_resetn,
     
     input       SampleStart,
@@ -14,13 +14,13 @@ module ag32gbd_sampler(
     output reg          RequestReadReg,
     output reg [9:0]    RegReadAddr,
     input      [7:0]    RegReadOutput,
+    input               RegReadDone,
 
     output              SampleDone,
     output reg [1:0]    SampledValue
 );
 
 reg adc_en;
-//reg adc_stop;
 wire [11:0] adc_db;
 wire adc_eoc;
 reg [7:0] AdcOutput;
@@ -42,7 +42,6 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         AdcEocEdge[2:0] <= {AdcEocEdge[1:0], adc_eoc};
     end
 end
-
 
 function [9:0] PixelXYToBramAddr;
     input [6:0] PixelX;
@@ -71,10 +70,9 @@ reg [7:0] RegMid;
 reg [7:0] RegHigh;
 //reg [4:0] Counter;
 reg [5:0] State;
-reg WaitingForData;
 reg [6:0] HoldSampleDone;
-reg [3:0] Wait4;
-reg ReadyToSample;
+reg ReadyToTransit;
+reg ReadyToTransit2;
 reg regSampleDone;
 
 
@@ -87,96 +85,90 @@ always @(negedge sys_resetn or posedge sys_clock) begin
     end
 end
 
+
+
 always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
         RequestReadReg <= 0;
         RegReadAddr <= 0;
         regSampleDone <= 0;
         SampledValue <= 0;
-        //Counter <= 0;
         State <= S_IDLE;
-        WaitingForData <= 0;
-        ReadyToSample <= 0;
-        Wait4 <= 0;
         adc_en <= 1'b0;
-        AdcOutput <= 0;
+        ReadyToTransit <= 0;
+        ReadyToTransit2 <= 0;
     end else begin
         case (State)
         S_IDLE: begin
             RequestReadReg <= 1'b0;
-            adc_en <= 1'b0;
+            //adc_en <= 1'b0;
             if (regSampleDone) begin
                 regSampleDone <= 0;
             end
             if (!Last_SampledStart[1] && Last_SampledStart[0]) begin
-                // posedge, start sampling in 4 clocks
-                ReadyToSample <= 1'b1;
-                Wait4 <= 0;
-            end
-            if (ReadyToSample) begin
+                // posedge, start sampling
                 adc_en <= 1'b1;
-                if (Wait4 == 4'd4) begin
-                //    Counter <= 5'b0;
-                    regSampleDone <= 1'b0;
-                    WaitingForData <= 0;
-                    RegReadAddr <= PixelXYToBramAddr(PixelX, PixelY, 3'b100); // low
-                    RequestReadReg <= 1'b1;
-                    ReadyToSample <= 0;
-                    Wait4 <=0;
-                    State <= S_REQUEST_LOW;
-                end else begin
-                    Wait4 <= Wait4 + 2'd1;
-                end
+                regSampleDone <= 1'b0;
+                RegReadAddr <= PixelXYToBramAddr(PixelX, PixelY, 3'b100); // low
+                RequestReadReg <= 1'b1;
+                ReadyToTransit <= 1'b1;
+            end
+            if (ReadyToTransit && !RegReadDone) begin
+                ReadyToTransit <= 0;
+                ReadyToTransit2 <= 0;
+                State <= S_REQUEST_LOW;
             end
         end
         S_REQUEST_LOW: begin
-        //    Counter <= Counter + 5'b1;
-            if (!WaitingForData) begin
-                WaitingForData <= 1'b1;
-                RequestReadReg <= 1'b0;
+            if (RegReadDone) begin
+                RequestReadReg <= 0;
+                ReadyToTransit <= 1'b1;
                 RegLow <= RegReadOutput[7:0];
-            end else begin
-                State <= S_REQUEST_MID;
+            end 
+            if (ReadyToTransit) begin
                 RegReadAddr <= PixelXYToBramAddr(PixelX, PixelY, 3'b010); // mid
-                WaitingForData <= 0;
                 RequestReadReg <= 1'b1;
+                ReadyToTransit2 <= 1'b1;
+                if (ReadyToTransit2 && !RegReadDone) begin
+                    ReadyToTransit <= 0;
+                    ReadyToTransit2 <= 0;
+                    State <= S_REQUEST_MID;
+                end
             end
         end
         S_REQUEST_MID: begin
-        //    Counter <= Counter + 5'b1;
-            if (!WaitingForData) begin
-                WaitingForData <= 1'b1;
-                RequestReadReg <= 1'b0;
+            if (RegReadDone) begin
+                RequestReadReg <= 0;
+                ReadyToTransit <= 1'b1;
                 RegMid <= RegReadOutput[7:0];
-            end else begin
-                State <= S_REQUEST_HIGH;
+            end
+            if (ReadyToTransit) begin
                 RegReadAddr <= PixelXYToBramAddr(PixelX, PixelY, 3'b001); // high
-                WaitingForData <= 0;
                 RequestReadReg <= 1'b1;
+                ReadyToTransit2 <= 1'b1;
+                if (ReadyToTransit2 && !RegReadDone) begin
+                    ReadyToTransit <= 0;
+                    ReadyToTransit2 <= 0;
+                    State <= S_REQUEST_HIGH;
+                end
             end
         end
         S_REQUEST_HIGH: begin
-        //    Counter <= Counter + 5'b1;
-            if (!WaitingForData) begin
-                WaitingForData <= 1'b1;
+            if (RegReadDone) begin
                 RequestReadReg <= 1'b0;
+                ReadyToTransit <= 1'b1;
                 RegHigh <= RegReadOutput[7:0];
-            end else begin
+            end
+            if (ReadyToTransit) begin
+                ReadyToTransit <= 0;
                 State <= S_WAIT;
             end
         end
         S_WAIT: begin
-            /*if (Counter >= 5'd12) begin
-                // if adc output value.
-                State <= S_OUTPUT;
-                Counter <= 5'b0;
-            end else begin
-                Counter <= Counter + 5'b1;
-            end*/
-            if (AdcEocEdge[2] && !AdcEocEdge[1]) begin
+            if (!AdcEocEdge[1] && AdcEocEdge[0]) begin
                 AdcOutput[7:0] <= adc_db[11:4];
-                State <= S_OUTPUT;
                 adc_en <= 1'b0;
+                State <= S_OUTPUT;
             end
         end
         S_OUTPUT: begin
@@ -190,6 +182,9 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                 SampledValue <= 2'b00;
             end
             regSampleDone <= 1'b1;
+            ReadyToTransit <= 0;
+            ReadyToTransit2 <= 0;
+            adc_en <= 1'b0;
             State <= S_IDLE;
         end
         endcase

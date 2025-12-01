@@ -1,4 +1,4 @@
-`default_nettype none
+//`default_nettype none
 `timescale 1ps/1ps
 
 /*
@@ -18,35 +18,33 @@ module ag32gbd_bram_ctrl(
     input               RequestWriteReg,
     input       [7:0]   RegWriteData,
     input       [9:0]   RegWriteAddr,
+    output reg          RegWriteDataDone,
 
     input               RequestWriteBuffer,
     input       [7:0]   BufferWriteData,
     input       [9:0]   BufferWriteOffset,
+    output reg          BufferWriteDataDone,
 
     input               RequestReadReg,
     input       [9:0]   RegReadAddr,
     output reg  [7:0]   RegReadOutput,
-    //output              RegReadDataReady,
+    output              RegReadDataReady,
+
 
     input               RequestReadBuffer,
     input       [9:0]   BufferReadOffset,
-    output reg  [7:0]   BufferReadOutput
-    //output              BufferReadDataReady
+    output reg  [7:0]   BufferReadOutput,
+    output              BufferReadDataReady
 );
 
 reg [9:0]   bram_addr_a = 10'h3FF;
 reg [9:0]   bram_addr_b = 10'h3FF;
 reg [7:0]   bram_data_in_a = 8'b0;
-//reg [7:0]   bram_data_in_b = 8'b0;
 reg         bram_rden_a = 1'b0;
 reg         bram_rden_b = 1'b0;
 reg         bram_wren_a = 1'b0;
-reg         bram_wren_b = 1'b0;
 wire [7:0]  bram_data_out_a;
 wire [7:0]  bram_data_out_b;
-
-// reg regBufferReadDataReady;
-// reg regRegReadDataReady;
 
 block_ram	block_ram_inst (
 	.address_a ( bram_addr_a ),
@@ -57,7 +55,7 @@ block_ram	block_ram_inst (
 	.rden_a ( bram_rden_a ),
 	.rden_b ( bram_rden_b ),
 	.wren_a ( bram_wren_a ),
-	.wren_b ( bram_wren_b ),
+	.wren_b ( 1'b0 ),
 	.q_a ( bram_data_out_a ),
 	.q_b ( bram_data_out_b )
 );
@@ -65,134 +63,162 @@ block_ram	block_ram_inst (
 localparam [9:0] ImageBufferA = 10'h000;
 localparam [9:0] ImageBufferB = 10'h100;
 
-// reg [1:0] RequestWriteRegEdge;
-// reg [1:0] RequestWriteBufferEdge;
-// reg [1:0] RequestReadRegEdge;
-// reg [1:0] RequestReadBufferEdge;
-
-reg [9:0] FlipBufferDelay;
-// reg [19:0] Last20ReadReg;
-// reg [19:0] Last20ReadBuffer;
-
-reg WaitRegRead;
-reg WaitBufferRead;
-
-wire BufferSwapped;
-always @(posedge sys_clock or negedge resetn) begin
-    if (!resetn) begin
-        FlipBufferDelay <= 10'b0;
-    end else begin
-        FlipBufferDelay <= {FlipBufferDelay[8:0], FlipBuffer};
-    end
-end
-assign BufferSwapped = FlipBufferDelay[9];
-
+wire BufferSwapped = FlipBuffer;
 wire [9:0] BufferPortA = BufferSwapped ? ImageBufferB : ImageBufferA;
 wire [9:0] BufferPortB = BufferSwapped ? ImageBufferA : ImageBufferB;
 
-
-// always @(posedge sys_clock or negedge resetn) begin
-//     if (!resetn) begin
-//         RequestWriteRegEdge     <= 2'b0;
-//         RequestWriteBufferEdge  <= 2'b0;
-//         RequestReadRegEdge      <= 2'b0;
-//         RequestReadBufferEdge   <= 2'b0;
-//         Last20ReadReg <= 0;
-//         Last20ReadBuffer <= 0;
-//     end else begin
-//         RequestWriteRegEdge    <= {RequestWriteRegEdge[0], RequestWriteReg};
-//         RequestWriteBufferEdge <= {RequestWriteBufferEdge[0], RequestWriteBuffer};
-//         RequestReadRegEdge     <= {RequestReadRegEdge[0], RequestReadReg};
-//         RequestReadBufferEdge  <= {RequestReadBufferEdge[0], RequestReadBuffer};
-//         Last20ReadReg[19:0]    <= {Last20ReadReg[18:0], RequestReadReg};
-//         Last20ReadBuffer[19:0] <= {Last20ReadBuffer[18:0], RequestReadBuffer};
-//     end
-// end
-
-always @(posedge sys_clock or negedge resetn) begin
+// Port B is easy
+reg regBufferReadDataReady;
+assign BufferReadDataReady = regBufferReadDataReady;
+localparam S_PortB_Idle        = 3'b000;
+localparam S_PortB_Reading     = 3'b001;
+localparam S_PortB_Output      = 3'b010;
+localparam S_PortB_Wait1       = 3'b011;
+localparam S_PortB_Wait2       = 3'b100;
+reg [2:0] StateB;
+always @(negedge resetn or posedge sys_clock) begin
     if (!resetn) begin
-        bram_addr_a <= 10'h3FF;
+        StateB <= S_PortB_Idle;
         bram_addr_b <= 10'h3FF;
-        bram_data_in_a <= 8'b0;
-        //bram_data_in_b <= 8'b0;
-        bram_rden_a <= 1'b0;
         bram_rden_b <= 1'b0;
-        bram_wren_a <= 1'b0;
-        bram_wren_b <= 1'b0;
-
-        RegReadOutput[7:0] <= 8'b0;
-        //regRegReadDataReady <= 1'b0;
-        BufferReadOutput[7:0] <= 8'b0;
-        //regBufferReadDataReady <= 1'b0;
-        WaitRegRead <= 1'b0;
-        WaitBufferRead <= 1'b0;
-
+        BufferReadOutput <= 8'b0;
+        regBufferReadDataReady <= 1'b0;
     end else begin
+        case (StateB)
+            S_PortB_Idle: begin
+                bram_rden_b <= 0;
+                bram_addr_b <= 10'h3FF;
+                regBufferReadDataReady <= 1'b0;
+                if (RequestReadBuffer) begin
+                    bram_addr_b[9:0] <= {BufferPortB[9:8], BufferReadOffset[7:0]};
+                    bram_rden_b <= 1'b1;
+                    StateB <= S_PortB_Reading;
+                end
+            end
+            S_PortB_Reading: begin
+                StateB <= S_PortB_Output;
+            end
+            S_PortB_Output: begin
+                BufferReadOutput <= bram_data_out_b;
+                //BufferReadOutput <= {BufferSwapped, BufferReadOffset[6:0]}; //test
+                regBufferReadDataReady <= 1'b1;
+                StateB <= S_PortB_Wait1;
+            end
+            S_PortB_Wait1: begin
+                bram_rden_b <= 1'b0;
+                regBufferReadDataReady <= 1'b0;
+                StateB <= S_PortB_Wait2;
+            end
+            S_PortB_Wait2: begin
+                StateB <= S_PortB_Idle;
+            end
+            default: begin
+                StateB <= S_PortB_Idle;
+            end
+        endcase
+    end
+end
 
-        // if (!(|Last20ReadReg[19:0]))
-        //     regRegReadDataReady <= 0;
-        // if (!(|Last20ReadBuffer[19:0]))
-        //     regBufferReadDataReady <= 0;
 
-        if (WaitBufferRead) begin
-            BufferReadOutput <= bram_data_out_b;
-            WaitBufferRead <= 1'b0;
-            //regBufferReadDataReady <= 1'b1;
-        end else if (RequestReadBuffer) begin
-            bram_rden_b <= 1'b1;
-            bram_wren_b <= 1'b0;
-            bram_addr_b <= BufferPortB + BufferReadOffset;
-            WaitBufferRead <= 1'b1;
-            //regBufferReadDataReady <= 1'b0;
-        end else begin
-            bram_rden_b <= 1'b0;
-            bram_wren_b <= 1'b0;
-        end
+// Port A is a littel bit complex
+reg regRegReadDataReady;
+assign RegReadDataReady = regRegReadDataReady;
+localparam S_PortA_Idle                = 4'b0000;
+localparam S_PortA_RegWrite            = 4'b0001;
+localparam S_PortA_RegRead             = 4'b0010;
+localparam S_PortA_RegOutput           = 4'b0011;
+localparam S_PortA_BufferWrite         = 4'b0100;
+localparam S_PortA_Wait                = 4'b1111;
+localparam S_PortA_Wait2               = 4'b1011;
+localparam S_PortA_Wait_RegWrite       = 4'b1101;
+localparam S_PortA_Wait_BufferWrite    = 4'b1110;
+reg [3:0] StateA;
+always @(negedge resetn or posedge sys_clock) begin
+    if (!resetn) begin
+        StateA <= S_PortA_Idle;
+        bram_addr_a <= 10'h3FF;
+        bram_data_in_a <= 8'b0;
+        bram_rden_a <= 1'b0;
+        bram_wren_a <= 1'b0;
+        RegReadOutput <= 8'b0;
+        regRegReadDataReady <= 1'b0;
+        RegWriteDataDone <= 1'b0;
+        BufferWriteDataDone <= 1'b0;
+    end else begin
+        case (StateA)
+            S_PortA_Idle: begin
+                bram_rden_a <= 1'b0;
+                bram_wren_a <= 1'b0;
+                regRegReadDataReady <= 1'b0;
+                RegWriteDataDone <= 1'b0;
+                BufferWriteDataDone <= 1'b0;
+                
+                if (RequestWriteReg) begin  // 1st priority
+                    bram_addr_a[9:0] <= RegWriteAddr[9:0];
+                    bram_data_in_a <= RegWriteData;
+                    bram_wren_a <= 1'b1;
+                    StateA <= S_PortA_RegWrite;
+                end else if (RequestReadReg) begin // 2nd priority
+                    bram_addr_a[9:0] <= RegReadAddr[9:0];
+                    bram_rden_a <= 1'b1;
+                    StateA <= S_PortA_RegRead;
+                end else if (RequestWriteBuffer) begin // last
+                    bram_addr_a[9:0] <= {BufferPortA[9:8], BufferWriteOffset[7:0]};
+                    bram_data_in_a <= BufferWriteData;
+                    //bram_data_in_a <= BufferWriteOffset[7:0]; //test
+                    bram_wren_a <= 1'b1;
+                    StateA <= S_PortA_BufferWrite;
+                end
+            end
 
-        if (RequestWriteReg) begin
-            bram_rden_a <= 1'b0;
-            bram_wren_a <= 1'b1;
-            bram_addr_a <= RegWriteAddr;
-            bram_data_in_a <= RegWriteData;
-        end else if (WaitRegRead) begin
-            RegReadOutput <= bram_data_out_a;
-            WaitRegRead <= 1'b0;
-            //regRegReadDataReady <= 1'b1;
-        end else if (RequestReadReg) begin
-            bram_rden_a <= 1'b1;
-            bram_wren_a <= 1'b0;
-            bram_addr_a <= RegReadAddr;
-            WaitRegRead <= 1'b1;
-            //regRegReadDataReady <= 1'b0;
-        end else if (RequestWriteBuffer) begin
-            bram_rden_a <= 1'b0;
-            bram_wren_a <= 1'b1;
-            bram_addr_a <= BufferPortA + BufferWriteOffset;
-            bram_data_in_a <= BufferWriteData;
-        end else begin
-            bram_rden_a <= 1'b0;
-            bram_wren_a <= 1'b0;
-        end
+            S_PortA_RegWrite: begin
+                StateA <= S_PortA_Wait_RegWrite;
+            end
+            S_PortA_Wait_RegWrite: begin
+                bram_wren_a <= 0;
+                RegWriteDataDone <= 1'b1;
+                StateA <= S_PortA_Wait;
+            end
 
-    end // if (!resetn) else
-end // always
+            S_PortA_RegRead: begin
+                StateA <= S_PortA_RegOutput;
+            end
+            S_PortA_RegOutput: begin
+                bram_rden_a <= 0;
+                RegReadOutput <= bram_data_out_a;
+                regRegReadDataReady <= 1'b1;
+                StateA <= S_PortA_Wait2;
+            end
+            S_PortA_Wait2: begin
+                regRegReadDataReady <= 0;
+                StateA <= S_PortA_Wait;
+            end
 
-//reg [3:0] holdRegBufferReadDataReady;
-//reg [3:0] holdRegRegReadDataReady;
+            S_PortA_BufferWrite: begin
+                StateA <= S_PortA_Wait_BufferWrite;
+            end
+            S_PortA_Wait_BufferWrite: begin
+                bram_wren_a <= 0;
+                BufferWriteDataDone <= 1'b1;
+                StateA <= S_PortA_Wait;
+            end
 
-//always @(posedge sys_clock or negedge resetn) begin
-//     if (!resetn) begin
-//         holdRegBufferReadDataReady <= 4'b0;
-//         //holdRegRegReadDataReady <= 4'b0;
-//     end else begin
-//         holdRegBufferReadDataReady <= {holdRegBufferReadDataReady[2:0], regBufferReadDataReady};
-//         //holdRegRegReadDataReady <= {holdRegRegReadDataReady[2:0], regRegReadDataReady};
-//     end 
-// end
+            S_PortA_Wait: begin
+                bram_rden_a <= 0;
+                bram_wren_a <= 0;
+                RegWriteDataDone <= 0;
+                BufferWriteDataDone <= 0;
+                regRegReadDataReady <= 0;
+                StateA <= S_PortA_Idle;
+            end
 
-// assign BufferReadDataReady = |holdRegBufferReadDataReady[3:0];
-// // assign RegReadDataReady = |holdRegRegReadDataReady[3:0];
-// assign RegReadDataReady = regRegReadDataReady;
+            default: begin
+                StateA <= S_PortA_Idle;
+            end
+
+        endcase
+    end
+end
 
 endmodule
 `default_nettype wire

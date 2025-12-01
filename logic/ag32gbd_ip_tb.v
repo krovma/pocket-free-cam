@@ -4,6 +4,7 @@ module ag32gbd_ip_tb;
 
 reg           i_resetn    = 1;
 reg           i_sys_clock = 1;
+reg           i_bus_clock = 1;
 
 wire          i_cart_clk;
 reg   [15:0]  i_cart_a;
@@ -23,6 +24,7 @@ wire Ramio;
 
 ag32gbd_ip gbd_inst(
     .sys_clock(i_sys_clock),
+    .bus_clock(i_bus_clock),
     .resetn(i_resetn),
 
     .top_A(i_cart_a),
@@ -54,6 +56,10 @@ always begin
     #5;
 end
 
+always begin
+    i_bus_clock = ~i_bus_clock; // 50MHz
+    #40;
+end
 reg gb_clk_div2 = 0;
 always @(posedge gb_clk) begin
     gb_clk_div2 = ~gb_clk_div2;
@@ -208,8 +214,9 @@ initial begin
     writeRamCam(16'hA003, 8'd10);
     #10000;   
     tryCapture();
-    #500000000;
-
+    #100000000;
+    tryCapture();
+    #100000000
     $stop;
 end
 

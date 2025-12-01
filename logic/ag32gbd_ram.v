@@ -1,4 +1,4 @@
-`default_nettype none
+// `default_nettype none
 `timescale 1ps/1ps
 
 module ag32gbd_ram (

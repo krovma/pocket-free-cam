@@ -1,4 +1,4 @@
-`default_nettype none
+//`default_nettype none
 `timescale 1ps/1ps
 
 // gameboy bus i/o for writing Cam regs, and read result of a000
@@ -21,6 +21,7 @@ module ag32gbd_reg (
     output  reg           Bram_Req_Write,
     output  reg [9:0]     Bram_Addr,
     output  reg [7:0]     Bram_Data,
+    input                 Bram_WriteRegDone,
 
     output  reg [7:0]     Reg_A000,
     output  reg [7:0]     Reg_A001,
@@ -31,8 +32,6 @@ module ag32gbd_reg (
 
     output  wire          Cam_Capture
 );
-
-reg [2:0] bram_signal_reset_cnt;
 
 wire is_accessing_ram_addr = (Cart_a[15:13] == 3'b101 && !Cart_nCS);
 wire is_accessing_reg = (Ram_bank_id == 5'h10 && is_accessing_ram_addr);
@@ -76,7 +75,6 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         Bram_Req_Write <= 1'b0;
         Bram_Addr <= 10'b0;
         Bram_Data <= 8'b0;
-        bram_signal_reset_cnt <= 3'b0;
 
         Reg_A000 <= 8'b0;
         Reg_A001 <= 8'b0;
@@ -86,12 +84,10 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         Reg_A005 <= 8'b0;
     end else begin
         if (Bram_Req_Write) begin
-            if (bram_signal_reset_cnt == 3'd1) begin
-                bram_signal_reset_cnt <= 3'b0;
+            if (Bram_WriteRegDone) begin
                 Bram_Req_Write <= 1'b0;
+                Bram_Addr <= 10'b0;
                 Bram_Data <= 8'b0;
-            end else begin
-                bram_signal_reset_cnt = bram_signal_reset_cnt + 3'd1;
             end
         end else begin
             if (last_nWR[1] && !last_nWR[0]) begin // negedge of nWR
@@ -106,7 +102,6 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                         7'h05: Reg_A005[7:0] <= Cart_d[7:0];
                         default: begin
                             Bram_Req_Write <= 1'b1;
-                            bram_signal_reset_cnt <= 3'b0;
                             Bram_Addr <= RegAddrToBramAddr(reg_addr);
                             Bram_Data <= Cart_d[7:0];
                         end

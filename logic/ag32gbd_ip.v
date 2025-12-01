@@ -1,4 +1,4 @@
-`default_nettype none
+//`default_nettype none
 `timescale 1ns/1ps
 module ag32gbd_ip (
     // MAC-GBD
@@ -99,7 +99,7 @@ assign slave_ahb_hready  = 1'b1;
 //     end
 // endfunction
 
-assign top_nRST = 1'bz;
+assign top_nRST = 1'bz; // not used
 
 wire [22:14] output_rom_a;
 wire output_rom_nCS;
@@ -166,41 +166,49 @@ wire            FlipBuffer;
 wire            RequestWriteReg;
 wire    [7:0]   RegWriteData;
 wire    [9:0]   RegWriteAddr;
+wire            RegWriteDataDone;
 wire            RequestWriteBuffer;
 wire    [7:0]   BufferWriteData;
 wire    [9:0]   BufferWriteOffset;
+wire            BufferWriteDataDone;
 wire            RequestReadReg;
 wire    [9:0]   RegReadAddr;
 wire    [7:0]   RegReadOutput;
-//wire            RegReadDataReady;
+wire            RegReadDataReady;
 wire            RequestReadBuffer;
 wire    [9:0]   BufferReadOffset;
 wire    [7:0]   BufferReadOutput;
-//wire            BufferReadDataReady;
+wire            BufferReadDataReady;
 
 ag32gbd_bram_ctrl gbdbram_ctrl(
     .sys_clock(sys_clock),
     .resetn(resetn),
 
     .FlipBuffer(FlipBuffer),
+
     .RequestWriteReg(RequestWriteReg),
     .RegWriteData(RegWriteData),
     .RegWriteAddr(RegWriteAddr),
+    .RegWriteDataDone(RegWriteDataDone),
+    
     .RequestWriteBuffer(RequestWriteBuffer),
     .BufferWriteData(BufferWriteData),
     .BufferWriteOffset(BufferWriteOffset),
+    .BufferWriteDataDone(BufferWriteDataDone),
+    
     .RequestReadReg(RequestReadReg),
     .RegReadAddr(RegReadAddr),
     .RegReadOutput(RegReadOutput),
-    //.RegReadDataReady(RegReadDataReady),
+    .RegReadDataReady(RegReadDataReady),
+    
     .RequestReadBuffer(RequestReadBuffer),
     .BufferReadOffset(BufferReadOffset),
-    .BufferReadOutput(BufferReadOutput)
-    //.BufferReadDataReady(BufferReadDataReady)
+    .BufferReadOutput(BufferReadOutput),
+    .BufferReadDataReady(BufferReadDataReady)
 );
 
 
-wire topBlockBufferDataReady;
+wire topBlockDataReady;
 wire top_ramNewRunReset;
 
 ag32gbd_ram_write gbdram_write(
@@ -209,7 +217,7 @@ ag32gbd_ram_write gbdram_write(
     .cart_CLK(top_CLK),
 
     .NewRunReset(top_ramNewRunReset),
-    .BlockBufferDataReady(topBlockBufferDataReady),
+    .BlockDataReady(topBlockDataReady),
 
     .Gbd_Writing_Ram(top_isGbdWritingRam),
     .Ram_Writing_Addr_Low(ram_a_low_writing),
@@ -219,7 +227,8 @@ ag32gbd_ram_write gbdram_write(
 
     .RequestReadBuffer(RequestReadBuffer),
     .ReadBufferOffset(BufferReadOffset),
-    .BufferReadResult(BufferReadOutput)
+    .BufferReadResult(BufferReadOutput),
+    .BufferDataReady(BufferReadDataReady)
 );
 
 wire                 Reg_OutputValid;
@@ -250,6 +259,8 @@ ag32gbd_reg gbdreg(
     .Bram_Req_Write(RequestWriteReg),
     .Bram_Addr(RegWriteAddr),
     .Bram_Data(RegWriteData),
+    .Bram_WriteRegDone(RegWriteDataDone),
+
     .Reg_A000(Reg_A000),
     .Reg_A001(Reg_A001),
     .Reg_A002(Reg_A002),
@@ -260,6 +271,8 @@ ag32gbd_reg gbdreg(
 
     .Sig_CamCaptureFinish(Flag_CamCaptureFinish)
 );
+
+wire debug_request_write_buffer;
 
 ag32gbd_cam gbdcam(
     .Cam_Capture(Flag_CamCapture),
@@ -286,15 +299,19 @@ ag32gbd_cam gbdcam(
     .RequestReadReg(RequestReadReg),
     .RegReadAddr(RegReadAddr),
     .RegReadOutput(RegReadOutput),
+    .RegReadDataReady(RegReadDataReady),
 
     .FlipBuffer(FlipBuffer),
     .BufferWriteData(BufferWriteData),
     .BufferWriteOffset(BufferWriteOffset),
     .RequestWriteBuffer(RequestWriteBuffer),
+    .BufferWriteDataDone(BufferWriteDataDone),
 
     .isGbdWritingRam(top_isGbdWritingRam),
     .RamNewRun(top_ramNewRunReset),
-    .BlockBufferDataReady(topBlockBufferDataReady)
+    .BlockBufferDataReady(topBlockDataReady),
+
+    .debug_request_write_buffer(debug_request_write_buffer)
 );
 
 
@@ -315,8 +332,13 @@ always @(posedge sys_clock or negedge resetn) begin
     end
 end
 
-assign top_nLED_REC = ~Flag_CamCapture;
-assign top_nLED_RAMIO = ~top_isGbdWritingRam;
+reg nrec = 1'b1;
+always @(debug_request_write_buffer) begin
+    nrec <= ~nrec;
+end
+
+assign top_nLED_REC = ~top_isGbdWritingRam; //~Flag_CamCapture;
+assign top_nLED_RAMIO = ~Flag_CamCapture;//~top_isGbdWritingRam;
 //assign top_nLED_RAMIO = ~isReadingRAM;
 //assign top_nLED_RAMIO = ~top_debug_sample_done;
 //assign top_nLED_RAMIO = top_RAM_nWE;
