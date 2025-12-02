@@ -1,4 +1,4 @@
-//`default_nettype none
+`default_nettype none
 `timescale 1ps/1ps
 
 module ag32gbd_cam (
@@ -157,7 +157,7 @@ reg [6:0] SampleWaitCnt;
 wire SampleDone;
 wire [1:0] SampledValue;
 //reg [7:0] fake_data_source;
-
+//reg [7:0] debug_write_offset;
 
 ag32gbd_sampler sampler_inst (
     .sys_resetn(sys_resetn),
@@ -181,6 +181,8 @@ ag32gbd_sampler sampler_inst (
 //assign debug_sample_done = SampleDone;
 
 reg [7:0] ByteDataBuffer;
+//reg [7:0] DebugDataBuffer;
+//assign BufferWriteData[7:0] = DebugDataBuffer[7:0];
 assign BufferWriteData[7:0] = ByteDataBuffer[7:0];
 
 // camera state machine do nothing if cam_capture is 0
@@ -350,8 +352,8 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         S_WAIT1: begin
             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
                 if (small_counter == 2'd1) begin
-                    //PixelX <= Nbit ? 7'd1 : 0;
                     PixelX <= 0;
+                    //PixelY <= Nbit ? 7'd1 : 7'd0;
                     PixelY <= 0;
                     FlipBuffer <= 0;
 
@@ -363,6 +365,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                     RequestWriteBuffer <= 0;
                     Sens_READ <= 1'b1;
                     // transition
+                    //debug_write_offset <= 0;
                     main_state <= S_READ;             
                 end else begin
                     small_counter <= 2'd1;
@@ -416,8 +419,12 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                 SampleStart <= 0;
                 ByteDataBuffer[7:0] <= {ByteDataBuffer[5:0], SampledValue[1:0]}; // Shift to left
                 if (PixelX[1:0] == 2'b11) begin
-                    BufferWriteOffset[9:0] <= {2'b00, PixelY[2:0], PixelX[6:2]};
+                    //BufferWriteOffset[9:0] <= {2'b00, debug_write_offset[7:0] - 8'b1};
+                    //DebugDataBuffer[7:0] <= {debug_write_offset[7:0]};
+                    BufferWriteOffset[9:0] <= {2'b00, {PixelY[2:0], PixelX[6:2]} - 8'b1};
+                    //BufferWriteOffset[9:0] <= {2'b00, counter_read[9:2]};
                     RequestWriteBuffer <= 1'b1;
+                    //debug_write_offset <= debug_write_offset + 8'b1;
                 end
             end
             

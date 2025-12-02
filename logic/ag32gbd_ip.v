@@ -1,4 +1,4 @@
-//`default_nettype none
+`default_nettype none
 `timescale 1ns/1ps
 module ag32gbd_ip (
     // MAC-GBD
@@ -337,8 +337,9 @@ always @(debug_request_write_buffer) begin
     nrec <= ~nrec;
 end
 
-assign top_nLED_REC = ~top_isGbdWritingRam; //~Flag_CamCapture;
-assign top_nLED_RAMIO = ~Flag_CamCapture;//~top_isGbdWritingRam;
+//assign top_nLED_REC = ~Flag_CamCapture;
+assign top_nLED_REC = 1'b1;
+assign top_nLED_RAMIO = top_SENS_XCK;
 //assign top_nLED_RAMIO = ~isReadingRAM;
 //assign top_nLED_RAMIO = ~top_debug_sample_done;
 //assign top_nLED_RAMIO = top_RAM_nWE;

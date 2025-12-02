@@ -1,4 +1,4 @@
-//`default_nettype none
+`default_nettype none
 `timescale 1ps/1ps
 
 /*
@@ -100,7 +100,7 @@ always @(negedge resetn or posedge sys_clock) begin
             end
             S_PortB_Output: begin
                 BufferReadOutput <= bram_data_out_b;
-                //BufferReadOutput <= {BufferSwapped, BufferReadOffset[6:0]}; //test
+                //BufferReadOutput[7:0] <= {BufferSwapped, BufferReadOffset[6:0]}; //test
                 regBufferReadDataReady <= 1'b1;
                 StateB <= S_PortB_Wait1;
             end
@@ -133,6 +133,9 @@ localparam S_PortA_Wait2               = 4'b1011;
 localparam S_PortA_Wait_RegWrite       = 4'b1101;
 localparam S_PortA_Wait_BufferWrite    = 4'b1110;
 reg [3:0] StateA;
+
+//reg [7:0] debug_BufferWriteCounter = 8'b0;
+
 always @(negedge resetn or posedge sys_clock) begin
     if (!resetn) begin
         StateA <= S_PortA_Idle;
@@ -144,6 +147,8 @@ always @(negedge resetn or posedge sys_clock) begin
         regRegReadDataReady <= 1'b0;
         RegWriteDataDone <= 1'b0;
         BufferWriteDataDone <= 1'b0;
+
+        //debug_BufferWriteCounter <= 8'b0;
     end else begin
         case (StateA)
             S_PortA_Idle: begin
@@ -165,7 +170,8 @@ always @(negedge resetn or posedge sys_clock) begin
                 end else if (RequestWriteBuffer) begin // last
                     bram_addr_a[9:0] <= {BufferPortA[9:8], BufferWriteOffset[7:0]};
                     bram_data_in_a <= BufferWriteData;
-                    //bram_data_in_a <= BufferWriteOffset[7:0]; //test
+                    //bram_data_in_a <= debug_BufferWriteCounter[7:0]; //test
+                    //debug_BufferWriteCounter <= debug_BufferWriteCounter + 8'd1;
                     bram_wren_a <= 1'b1;
                     StateA <= S_PortA_BufferWrite;
                 end
