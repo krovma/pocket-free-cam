@@ -46,6 +46,7 @@ logic/_output_files/
 logic/alta_db/
 logic/alta_logs/
 logic/*_tmp/
+logic/logic_log.txt
 PLLJ_PLLSPE_INFO.txt
 
 # output
