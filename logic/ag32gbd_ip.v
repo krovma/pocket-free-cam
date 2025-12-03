@@ -272,8 +272,6 @@ ag32gbd_reg gbdreg(
     .Sig_CamCaptureFinish(Flag_CamCaptureFinish)
 );
 
-wire debug_request_write_buffer;
-
 ag32gbd_cam gbdcam(
     .Cam_Capture(Flag_CamCapture),
     .Cart_CLK(top_CLK),
@@ -310,8 +308,6 @@ ag32gbd_cam gbdcam(
     .isGbdWritingRam(top_isGbdWritingRam),
     .RamNewRun(top_ramNewRunReset),
     .BlockBufferDataReady(topBlockDataReady),
-
-    .debug_request_write_buffer(debug_request_write_buffer)
 );
 
 
@@ -332,17 +328,8 @@ always @(posedge sys_clock or negedge resetn) begin
     end
 end
 
-reg nrec = 1'b1;
-always @(debug_request_write_buffer) begin
-    nrec <= ~nrec;
-end
-
-//assign top_nLED_REC = ~Flag_CamCapture;
-assign top_nLED_REC = 1'b1;
-assign top_nLED_RAMIO = top_SENS_XCK;
-//assign top_nLED_RAMIO = ~isReadingRAM;
-//assign top_nLED_RAMIO = ~top_debug_sample_done;
-//assign top_nLED_RAMIO = top_RAM_nWE;
+assign top_nLED_REC = ~Flag_CamCapture;
+assign top_nLED_RAMIO = ~top_isGbdWritingRam;
 
 //output assignments
 wire isReadingReg = Reg_OutputValid;

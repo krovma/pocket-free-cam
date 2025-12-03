@@ -38,15 +38,13 @@ module ag32gbd_cam (
     output reg Sens_RESET,
     output Sens_XCK,
     output reg Sens_READ,
-    output reg Cam_Capture_Finish,
-
-    output debug_request_write_buffer
+    output reg Cam_Capture_Finish
 );
 
 // input params
 wire [18:0] exposure_steps_xck = {Reg_A002[7:0], Reg_A003[7:0], 3'b000}; // (A002 << 8 + A003) * 8
 wire Nbit = Reg_A001[7];
-wire [14:0] reading_xck = 15'd16384;//Nbit ? 15'd16128 : 15'd16384;
+wire [14:0] reading_xck = Nbit ? 15'd16128 : 15'd16384;
 
 function [7:0] Reg4;
     input [2:0] theA000;
@@ -119,13 +117,24 @@ localparam  S_CONFIG_BIT_D1 = 11'b0_00000_00010;
 localparam  S_CONFIG_BIT_D0 = 11'b0_00000_00001;
 ////////////////////////////////////////////
 
-// divide clk into xck
+// divide clk into xck (sync at sys_clk)
+reg [1:0] Last_CLK_Reg;
+always @(negedge sys_resetn or posedge sys_clock) begin
+    if (!sys_resetn) begin
+        Last_CLK_Reg <= 2'b0;
+    end else begin
+        Last_CLK_Reg[1:0] <= {Last_CLK_Reg[0], Cart_CLK};
+    end
+end
+
 reg Sens_XCK_Reg;
-always @(negedge sys_resetn or posedge Cart_CLK) begin
+always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
         Sens_XCK_Reg <= 1'b0;
     end else begin
-        Sens_XCK_Reg <= ~Sens_XCK_Reg;
+        if (!Last_CLK_Reg[1] && Last_CLK_Reg[0]) begin
+            Sens_XCK_Reg <= ~Sens_XCK_Reg;
+        end
     end
 end
 assign Sens_XCK = Sens_XCK_Reg;
@@ -140,15 +149,6 @@ always @(negedge sys_resetn or posedge sys_clock) begin
     end
 end
 
-reg [1:0] Last_CLK_Reg;
-always @(negedge sys_resetn or posedge sys_clock) begin
-    if (!sys_resetn) begin
-        Last_CLK_Reg <= 2'b0;
-    end else begin
-        Last_CLK_Reg[1:0] <= {Last_CLK_Reg[0], Cart_CLK};
-    end
-end
-
 reg [6:0] PixelX;
 reg [6:0] PixelY;
 reg SampleStart;
@@ -156,8 +156,6 @@ reg RequestSampleStart;
 reg [6:0] SampleWaitCnt;
 wire SampleDone;
 wire [1:0] SampledValue;
-//reg [7:0] fake_data_source;
-//reg [7:0] debug_write_offset;
 
 ag32gbd_sampler sampler_inst (
     .sys_resetn(sys_resetn),
@@ -178,12 +176,10 @@ ag32gbd_sampler sampler_inst (
     //.FakeResultValue(fake_data_source)
 );
 
-//assign debug_sample_done = SampleDone;
-
 reg [7:0] ByteDataBuffer;
+assign BufferWriteData[7:0] = ByteDataBuffer[7:0];
 //reg [7:0] DebugDataBuffer;
 //assign BufferWriteData[7:0] = DebugDataBuffer[7:0];
-assign BufferWriteData[7:0] = ByteDataBuffer[7:0];
 
 // camera state machine do nothing if cam_capture is 0
 reg reset_pulse_send;
@@ -353,8 +349,8 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
                 if (small_counter == 2'd1) begin
                     PixelX <= 0;
-                    //PixelY <= Nbit ? 7'd1 : 7'd0;
-                    PixelY <= 0;
+                    PixelY <= Nbit ? 7'd1 : 7'd0;
+                    //PixelY <= 0;
                     FlipBuffer <= 0;
 
                     SampleStart <= 0;
@@ -406,7 +402,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
 
             // normal clock domain
             if (!SampleStart && RequestSampleStart) begin
-                if (SampleWaitCnt == 7'd15) begin
+                if (SampleWaitCnt == 7'd24) begin
                     SampleStart <= 1'b1;
                     RequestSampleStart <= 0;
                     SampleWaitCnt <= 0;
@@ -419,12 +415,9 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                 SampleStart <= 0;
                 ByteDataBuffer[7:0] <= {ByteDataBuffer[5:0], SampledValue[1:0]}; // Shift to left
                 if (PixelX[1:0] == 2'b11) begin
-                    //BufferWriteOffset[9:0] <= {2'b00, debug_write_offset[7:0] - 8'b1};
-                    //DebugDataBuffer[7:0] <= {debug_write_offset[7:0]};
-                    BufferWriteOffset[9:0] <= {2'b00, {PixelY[2:0], PixelX[6:2]} - 8'b1};
-                    //BufferWriteOffset[9:0] <= {2'b00, counter_read[9:2]};
+                    BufferWriteOffset[9:0] <= {2'b00, PixelY[2:0], PixelX[6:2]};
+                    // BufferWriteData[7:0] is assign to ByteDataBuffer[7:0]
                     RequestWriteBuffer <= 1'b1;
-                    //debug_write_offset <= debug_write_offset + 8'b1;
                 end
             end
             
@@ -482,8 +475,6 @@ always @(negedge sys_resetn or posedge sys_clock) begin
         endcase
     end
 end
-
-assign debug_request_write_buffer = RequestWriteBuffer;
 
 endmodule
 `default_nettype wire

@@ -100,12 +100,12 @@ always @(negedge sys_resetn or posedge sys_clock) begin
     end else begin
         case (State)
         S_IDLE: begin
-            RequestReadReg <= 1'b0;
+            //RequestReadReg <= 1'b0;
             //adc_en <= 1'b0;
             if (regSampleDone) begin
                 regSampleDone <= 0;
             end
-            if (!Last_SampledStart[1] && Last_SampledStart[0]) begin
+            if (!Last_SampledStart[1] && Last_SampledStart[0] && !ReadyToTransit) begin
                 // posedge, start sampling
                 adc_en <= 1'b1;
                 regSampleDone <= 1'b0;
@@ -120,7 +120,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             end
         end
         S_REQUEST_LOW: begin
-            if (RegReadDone) begin
+            if (RegReadDone && !ReadyToTransit) begin
                 RequestReadReg <= 0;
                 ReadyToTransit <= 1'b1;
                 RegLow <= RegReadOutput[7:0];
@@ -137,7 +137,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             end
         end
         S_REQUEST_MID: begin
-            if (RegReadDone) begin
+            if (RegReadDone && !ReadyToTransit) begin
                 RequestReadReg <= 0;
                 ReadyToTransit <= 1'b1;
                 RegMid <= RegReadOutput[7:0];
@@ -154,7 +154,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             end
         end
         S_REQUEST_HIGH: begin
-            if (RegReadDone) begin
+            if (RegReadDone && !ReadyToTransit) begin
                 RequestReadReg <= 1'b0;
                 ReadyToTransit <= 1'b1;
                 RegHigh <= RegReadOutput[7:0];
@@ -184,7 +184,8 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             regSampleDone <= 1'b1;
             ReadyToTransit <= 0;
             ReadyToTransit2 <= 0;
-            adc_en <= 1'b0;
+            adc_en <= 0;
+            RequestReadReg <= 0;
             State <= S_IDLE;
         end
         endcase

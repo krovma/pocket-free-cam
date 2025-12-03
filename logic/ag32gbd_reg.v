@@ -102,7 +102,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                         7'h05: Reg_A005[7:0] <= Cart_d[7:0];
                         default: begin
                             Bram_Req_Write <= 1'b1;
-                            Bram_Addr <= RegAddrToBramAddr(reg_addr) - 10'd1;
+                            Bram_Addr <= RegAddrToBramAddr(reg_addr);
                             Bram_Data <= Cart_d[7:0];
                         end
                     endcase

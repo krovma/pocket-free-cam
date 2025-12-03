@@ -79,28 +79,6 @@ reg [2:0] State;
 reg [7:0] Cache_iajbkcld;
 reg [7:0] Cache_menfogph;
 
-wire [7:0] abcdefgh = { 
-    Cache_iajbkcld [6], //a
-    Cache_iajbkcld [4], //b
-    Cache_iajbkcld [2], //c
-    Cache_iajbkcld [0], //d
-    Cache_menfogph [6], //e
-    Cache_menfogph [4], //f
-    Cache_menfogph [2], //g
-    Cache_menfogph [0]  //h
-};
-
-wire [7:0] ijklmnop = { 
-    Cache_iajbkcld [7], //i
-    Cache_iajbkcld [5], //j
-    Cache_iajbkcld [3], //k
-    Cache_iajbkcld [1], //l
-    Cache_menfogph [7], //m
-    Cache_menfogph [5], //n
-    Cache_menfogph [3], //o
-    Cache_menfogph [1]  //p
-}; // ijklmnop
-
 reg [3:0] Wait12;
 // Data should hold for tDS >= 15ns --> about 1.5 ticks, do 10
 // for second write need to wait for tWZ + tDS about 2.5 ticks, still do 10
@@ -167,8 +145,7 @@ always @(negedge nAnyReset or posedge sys_clock) begin
             end
 
             S_WORK_READ_0: begin
-                ReadBufferOffset[9:0] <= {2'b0, iy[2:0], ix[4:1], 1'b1}; // iy << 5 + ix
-                //ReadBufferOffset[9:0] <= {2'b0, offset_cnt[7:0]};
+                ReadBufferOffset[9:0] <= {2'b0, iy[2:0], ix[4:1], 1'b0}; // iy << 5 + ix
                 RequestReadBuffer <= 1'b1;
                 ReadyToTransit <= 1'b1;
                 // transition
@@ -180,7 +157,7 @@ always @(negedge nAnyReset or posedge sys_clock) begin
             end // 1 tick 
 
             S_WORK_READ_1: begin
-                if (BufferDataReady) begin
+                if (BufferDataReady && !ReadyToTransit) begin
                     // first read done
                     RequestReadBuffer <= 1'b0;
                     Cache_iajbkcld <= BufferReadResult;
@@ -191,8 +168,7 @@ always @(negedge nAnyReset or posedge sys_clock) begin
                     // pre-hauliing ram addr
                     Ram_Writing_Addr_Low[11:0] <= {round_cnt[3:0], offset_cnt[7:0]};
                     // prepare second read
-                    ReadBufferOffset[9:0] <= {2'b0, iy[2:0], ix[4:1], 1'b0}; // iy << 5 + (ix + 1)
-                    //ReadBufferOffset[9:0] <= {2'b0, offset_cnt[7:0] + 8'b1};
+                    ReadBufferOffset[9:0] <= {2'b0, iy[2:0], ix[4:1], 1'b1}; // iy << 5 + (ix + 1)
                     RequestReadBuffer <= 1'b1;
                     ReadyToTransit2 <= 1'b1;
                     // transition
@@ -205,7 +181,7 @@ always @(negedge nAnyReset or posedge sys_clock) begin
             end
 
             S_WORK_WAIT_READ: begin
-                if (BufferDataReady) begin
+                if (BufferDataReady && !ReadyToTransit) begin
                     // second read done
                     RequestReadBuffer <= 1'b0;
                     Cache_menfogph <= BufferReadResult;
@@ -223,7 +199,16 @@ always @(negedge nAnyReset or posedge sys_clock) begin
                 if (bWaitTDS != 4'd5) begin
                     bWaitTDS <= bWaitTDS + 4'd1;  // wait for tDS
                 end else begin
-                    Ram_Writing_Data[7:0] <= abcdefgh;
+                    Ram_Writing_Data[7:0] <= { 
+                        Cache_iajbkcld [6], //a
+                        Cache_iajbkcld [4], //b
+                        Cache_iajbkcld [2], //c
+                        Cache_iajbkcld [0], //d
+                        Cache_menfogph [6], //e
+                        Cache_menfogph [4], //f
+                        Cache_menfogph [2], //g
+                        Cache_menfogph [0]  //h
+                    }; // abcdefgh
                     //Ram_Writing_Data[7:0] <= Cache_iajbkcld[7:0];
                     bWaitTDS <= 0;
                     offset_cnt <= offset_cnt + 8'd1; // +1C
@@ -254,7 +239,16 @@ always @(negedge nAnyReset or posedge sys_clock) begin
 
                     end else begin
                         Ram_Writing_nWE <= 1'b0;
-                        Ram_Writing_Data[7:0] <= ijklmnop;
+                        Ram_Writing_Data[7:0] <= { 
+                            Cache_iajbkcld [7], //i
+                            Cache_iajbkcld [5], //j
+                            Cache_iajbkcld [3], //k
+                            Cache_iajbkcld [1], //l
+                            Cache_menfogph [7], //m
+                            Cache_menfogph [5], //n
+                            Cache_menfogph [3], //o
+                            Cache_menfogph [1]  //p
+                        }; // ijklmnop
                         //Ram_Writing_Data[7:0] <= Cache_menfogph[7:0];
 
                         bWaitTDS <= 0;
