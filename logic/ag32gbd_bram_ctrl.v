@@ -99,17 +99,17 @@ always @(negedge resetn or posedge sys_clock) begin
                 StateB <= S_PortB_Output;
             end
             S_PortB_Output: begin
-                BufferReadOutput <= bram_data_out_b;
                 //BufferReadOutput[7:0] <= {BufferSwapped, BufferReadOffset[6:0]}; //test
-                regBufferReadDataReady <= 1'b1;
+                bram_rden_b <= 1'b0;
                 StateB <= S_PortB_Wait1;
             end
             S_PortB_Wait1: begin
-                bram_rden_b <= 1'b0;
-                regBufferReadDataReady <= 1'b0;
+                BufferReadOutput <= bram_data_out_b;
+                regBufferReadDataReady <= 1'b1;
                 StateB <= S_PortB_Wait2;
             end
             S_PortB_Wait2: begin
+                regBufferReadDataReady <= 1'b0;
                 StateB <= S_PortB_Idle;
             end
             default: begin
@@ -133,7 +133,7 @@ localparam S_PortA_Wait2               = 4'b1011;
 localparam S_PortA_Wait_RegWrite       = 4'b1101;
 localparam S_PortA_Wait_BufferWrite    = 4'b1110;
 reg [3:0] StateA;
-
+reg tick1;
 //reg [7:0] debug_BufferWriteCounter = 8'b0;
 
 always @(negedge resetn or posedge sys_clock) begin
@@ -147,7 +147,7 @@ always @(negedge resetn or posedge sys_clock) begin
         regRegReadDataReady <= 1'b0;
         RegWriteDataDone <= 1'b0;
         BufferWriteDataDone <= 1'b0;
-
+        tick1 <= 0;
         //debug_BufferWriteCounter <= 8'b0;
     end else begin
         case (StateA)
@@ -162,6 +162,7 @@ always @(negedge resetn or posedge sys_clock) begin
                     bram_addr_a[9:0] <= RegWriteAddr[9:0];
                     bram_data_in_a <= RegWriteData;
                     bram_wren_a <= 1'b1;
+                    tick1 <= 0;
                     StateA <= S_PortA_RegWrite;
                 end else if (RequestReadReg) begin // 2nd priority
                     bram_addr_a[9:0] <= RegReadAddr[9:0];
@@ -178,7 +179,13 @@ always @(negedge resetn or posedge sys_clock) begin
             end
 
             S_PortA_RegWrite: begin
-                StateA <= S_PortA_Wait_RegWrite;
+                if (!tick1) begin
+                    tick1 <= 1'b1;
+                    StateA <= S_PortA_RegWrite; // wait 1 cycle
+                end else begin
+                    tick1 <= 0;
+                    StateA <= S_PortA_Wait_RegWrite;
+                end
             end
             S_PortA_Wait_RegWrite: begin
                 bram_wren_a <= 0;
@@ -191,17 +198,23 @@ always @(negedge resetn or posedge sys_clock) begin
             end
             S_PortA_RegOutput: begin
                 bram_rden_a <= 0;
-                RegReadOutput <= bram_data_out_a;
-                regRegReadDataReady <= 1'b1;
                 StateA <= S_PortA_Wait2;
             end
             S_PortA_Wait2: begin
-                regRegReadDataReady <= 0;
+                RegReadOutput <= bram_data_out_a;
+                regRegReadDataReady <= 1'b1;
+                tick1 <= 0;
                 StateA <= S_PortA_Wait;
             end
 
             S_PortA_BufferWrite: begin
-                StateA <= S_PortA_Wait_BufferWrite;
+                if (!tick1) begin
+                    tick1 <= 1'b1;
+                    StateA <= S_PortA_Wait_BufferWrite;
+                end else begin
+                    tick1 <= 0;
+                    StateA <= S_PortA_Wait_BufferWrite;
+                end
             end
             S_PortA_Wait_BufferWrite: begin
                 bram_wren_a <= 0;

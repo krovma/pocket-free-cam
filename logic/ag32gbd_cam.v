@@ -45,6 +45,7 @@ module ag32gbd_cam (
 wire [18:0] exposure_steps_xck = {Reg_A002[7:0], Reg_A003[7:0], 3'b000}; // (A002 << 8 + A003) * 8
 wire Nbit = Reg_A001[7];
 wire [14:0] reading_xck = Nbit ? 15'd16128 : 15'd16384;
+//wire [14:0] reading_xck = 15'd16384;
 
 function [7:0] Reg4;
     input [2:0] theA000;
@@ -190,6 +191,7 @@ reg need_load_sig;
 reg [23:0] counter_read;
 reg [1:0] small_counter;
 reg [18:0] exposure_counter;
+reg [7:0] write_offset_cnt;
 
 always @(negedge sys_resetn or posedge sys_clock) begin
     if (!sys_resetn) begin
@@ -349,8 +351,8 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
                 if (small_counter == 2'd1) begin
                     PixelX <= 0;
-                    PixelY <= Nbit ? 7'd1 : 7'd0;
-                    //PixelY <= 0;
+                    //PixelY <= Nbit ? 7'd1 : 7'd0;
+                    PixelY <= 0;
                     FlipBuffer <= 0;
 
                     SampleStart <= 0;
@@ -362,6 +364,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                     Sens_READ <= 1'b1;
                     // transition
                     //debug_write_offset <= 0;
+                    write_offset_cnt <= 0;
                     main_state <= S_READ;             
                 end else begin
                     small_counter <= 2'd1;
@@ -402,7 +405,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
 
             // normal clock domain
             if (!SampleStart && RequestSampleStart) begin
-                if (SampleWaitCnt == 7'd24) begin
+                if (SampleWaitCnt >= 7'd19) begin
                     SampleStart <= 1'b1;
                     RequestSampleStart <= 0;
                     SampleWaitCnt <= 0;
@@ -414,8 +417,10 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             if (SampleDone && SampleStart) begin
                 SampleStart <= 0;
                 ByteDataBuffer[7:0] <= {ByteDataBuffer[5:0], SampledValue[1:0]}; // Shift to left
-                if (PixelX[1:0] == 2'b11) begin
-                    BufferWriteOffset[9:0] <= {2'b00, PixelY[2:0], PixelX[6:2]};
+                if (PixelX[1:0] == 2'b11 && !RequestWriteBuffer) begin
+                    //BufferWriteOffset[9:0] <= {2'b00, PixelY[2:0], PixelX[6:2]};
+                    BufferWriteOffset[9:0] <= {2'b00, write_offset_cnt[7:0]};
+                    write_offset_cnt <= write_offset_cnt + 8'b1;
                     // BufferWriteData[7:0] is assign to ByteDataBuffer[7:0]
                     RequestWriteBuffer <= 1'b1;
                 end
