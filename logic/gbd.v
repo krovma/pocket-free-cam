@@ -52,7 +52,7 @@ input         top_nCS;
 output        top_nLED_RAMIO;
 output        top_nLED_REC;
 input         top_nRD;
-output        top_nRST;
+inout         top_nRST;
 input         top_nWR;
 
 // PIN_HSE

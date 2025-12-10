@@ -22,7 +22,7 @@ module ag32gbd_ip (
     output tri0        top_nLED_RAMIO,
     output tri0        top_nLED_REC,
     input              top_nRD,
-    output tri0        top_nRST,
+    inout              top_nRST,
     input              top_nWR,
     // AG32 BOARD
     input              sys_clock,
@@ -99,7 +99,29 @@ assign slave_ahb_hready  = 1'b1;
 //     end
 // endfunction
 
-assign top_nRST = 1'bz; // not used
+// reg regRST;
+// reg rstDone;
+// reg [16:0] reset_counter;
+ assign top_nRST = 1'bz;//regRST;
+// always @(negedge resetn or posedge bus_clock) begin
+//     if (!resetn) begin
+//         regRST <= 1'bz;
+//         reset_counter <= 0;
+//         rstDone <= 0;
+//     end else begin
+//         if (!rstDone) begin
+//             if (reset_counter < 17'h1F000) begin
+//                 regRST <= 1'b0;
+//                 reset_counter <= reset_counter + 17'd1;
+//             end else begin
+//                 regRST <= 1'bz;
+//                 rstDone <= 1'b1;
+//             end
+//         end else begin
+//             regRST <= 1'bz;
+//         end
+//     end
+// end
 
 wire [22:14] output_rom_a;
 wire output_rom_nCS;

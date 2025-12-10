@@ -125,15 +125,15 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                 ReadyToTransit <= 1'b1;
                 RegLow <= RegReadOutput[7:0];
             end 
-            if (ReadyToTransit) begin
+            if (ReadyToTransit && !ReadyToTransit2) begin
                 RegReadAddr <= PixelXYToBramAddr(PixelX, PixelY, 3'b010); // mid
                 RequestReadReg <= 1'b1;
                 ReadyToTransit2 <= 1'b1;
-                if (ReadyToTransit2 && !RegReadDone) begin
-                    ReadyToTransit <= 0;
-                    ReadyToTransit2 <= 0;
-                    State <= S_REQUEST_MID;
-                end
+            end
+            if (ReadyToTransit2 && !RegReadDone) begin
+                ReadyToTransit <= 0;
+                ReadyToTransit2 <= 0;
+                State <= S_REQUEST_MID;
             end
         end
         S_REQUEST_MID: begin
@@ -142,15 +142,15 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                 ReadyToTransit <= 1'b1;
                 RegMid <= RegReadOutput[7:0];
             end
-            if (ReadyToTransit) begin
+            if (ReadyToTransit && !ReadyToTransit2) begin
                 RegReadAddr <= PixelXYToBramAddr(PixelX, PixelY, 3'b001); // high
                 RequestReadReg <= 1'b1;
                 ReadyToTransit2 <= 1'b1;
-                if (ReadyToTransit2 && !RegReadDone) begin
-                    ReadyToTransit <= 0;
-                    ReadyToTransit2 <= 0;
-                    State <= S_REQUEST_HIGH;
-                end
+            end
+            if (ReadyToTransit2 && !RegReadDone) begin
+                ReadyToTransit <= 0;
+                ReadyToTransit2 <= 0;
+                State <= S_REQUEST_HIGH;
             end
         end
         S_REQUEST_HIGH: begin
@@ -165,7 +165,7 @@ always @(negedge sys_resetn or posedge sys_clock) begin
             end
         end
         S_WAIT: begin
-            if (!AdcEocEdge[1] && AdcEocEdge[0]) begin
+            if (AdcEocEdge[1] && !AdcEocEdge[0]) begin
                 AdcOutput[7:0] <= adc_db[11:4];
                 adc_en <= 1'b0;
                 State <= S_OUTPUT;

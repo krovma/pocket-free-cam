@@ -349,7 +349,9 @@ always @(negedge sys_resetn or posedge sys_clock) begin
 
         S_WAIT1: begin
             if (!Last_XCK_Reg[1] && Last_XCK_Reg[0]) begin
-                if (small_counter == 2'd1) begin
+                if (small_counter == 2'd0) begin
+                    small_counter <= 2'd1; 
+                end else if (small_counter == 2'd1) begin
                     PixelX <= 0;
                     //PixelY <= Nbit ? 7'd1 : 7'd0;
                     PixelY <= 0;
@@ -362,12 +364,12 @@ always @(negedge sys_resetn or posedge sys_clock) begin
                     counter_read <= 0;
                     RequestWriteBuffer <= 0;
                     Sens_READ <= 1'b1;
+                    small_counter <= 2'd2;
+                end else if (small_counter == 2'd2) begin
                     // transition
                     //debug_write_offset <= 0;
                     write_offset_cnt <= 0;
-                    main_state <= S_READ;             
-                end else begin
-                    small_counter <= 2'd1;
+                    main_state <= S_READ;   
                 end
             end
         end
@@ -405,13 +407,17 @@ always @(negedge sys_resetn or posedge sys_clock) begin
 
             // normal clock domain
             if (!SampleStart && RequestSampleStart) begin
-                if (SampleWaitCnt >= 7'd19) begin
+                if (SampleWaitCnt > 7'd39) begin
                     SampleStart <= 1'b1;
                     RequestSampleStart <= 0;
                     SampleWaitCnt <= 0;
                 end else begin
                     SampleWaitCnt <= SampleWaitCnt + 7'd1;
                 end
+                // if (Last_XCK_Reg[1] && !Last_XCK_Reg[0]) begin
+                //     SampleStart <= 1'b1;
+                //     RequestSampleStart <= 0;
+                // end
             end
 
             if (SampleDone && SampleStart) begin

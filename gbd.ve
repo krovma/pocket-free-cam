@@ -1,11 +1,11 @@
 SYSCLK 100
 BUSCLK 12.5
+
 PLL_CLKIN PIN_OSC # Use internal clock @100MHz
 
 #####################
 # CPLD 
 #####################
-# PLL_CLKOUT4     pll_clk4
 
 
 #####################
@@ -42,7 +42,7 @@ top_D[5]		PIN_5		:INOUT
 top_D[6]		PIN_4		:INOUT
 top_D[7]		PIN_3		:INOUT
 
-top_nRST		PIN_2		:OUTPUT
+top_nRST		PIN_2		:INOUT
 
 ####################
 # Camera Interface
