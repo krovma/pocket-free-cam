@@ -10,7 +10,7 @@ A PocketCamera/GameBoy Camera replication. This project try to make a flashable 
 
 Because this project is derived from ChisFlash universe, I'll call it ChisPocketCamera. :)
 
-**Notice: You still need to detach the M64282FP camera module from the original cartridge to work. The only purpose of this project is to keep your cartridge PCB intact and still get a flashable camera cartridge.**
+**Notice: You still need the M64282FP camera module from the original cartridge to work. The only purpose of this project is to keep your cartridge PCB intact and still get a flashable camera cartridge.**
 
 Schematic and layout are still being iterated and will be released on OSHWlab/OSHWhub when finished. Preliminary version is like this...
 ![PreliminaryPCB](https://github.com/krovma/pocket-free-cam/blob/master/resources/pcb-preview.png)
