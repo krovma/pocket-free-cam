@@ -49,6 +49,20 @@ logic/*_tmp/
 logic/logic_log.txt
 PLLJ_PLLSPE_INFO.txt
 
+# ignore pio generated files
+include/README
+lib/README
+test/README
+logic/*.qdf
+logic/*.asf
+logic/*.hx
+logic/gbd.proj
+logic/gbd.qpf
+logic/gbd.qsf
+logic/gbd.sdc
+logic/gbd.v
+logic/gbd.vex
+
 # output
 gbd.bin
 gbd_batch.bin
