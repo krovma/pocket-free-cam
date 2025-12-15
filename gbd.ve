@@ -17,100 +17,94 @@ top_nRD			PIN_82		:INPUT
 top_nCS			PIN_83		:INPUT
 
 top_A[0]		PIN_84		:INPUT
-top_A[1]		PIN_92		:INPUT
-top_A[2]		PIN_61		:INPUT
-top_A[3]		PIN_62		:INPUT
-top_A[4]		PIN_63		:INPUT
-top_A[5]		PIN_64		:INPUT
-top_A[6]		PIN_65		:INPUT
-top_A[7]		PIN_66		:INPUT
-top_A[8]		PIN_67		:INPUT
-top_A[9]		PIN_91		:INPUT
-top_A[10]		PIN_90		:INPUT
-top_A[11]		PIN_89		:INPUT
-top_A[12]		PIN_88		:INPUT
-top_A[13]		PIN_87		:INPUT
-top_A[14]		PIN_93		:INPUT
-top_A[15]		PIN_95		:INPUT
+top_A[1]		PIN_85		:INPUT
+top_A[2]		PIN_86		:INPUT
+top_A[3]		PIN_87		:INPUT
+top_A[4]		PIN_88		:INPUT
+top_A[5]		PIN_89		:INPUT
+top_A[6]		PIN_90		:INPUT
+top_A[7]		PIN_91		:INPUT
+top_A[8]		PIN_95		:INPUT
+top_A[9]		PIN_96		:INPUT
+top_A[10]		PIN_97		:INPUT
+top_A[11]		PIN_98		:INPUT
+top_A[12]		PIN_79		:INPUT
+top_A[13]		PIN_78		:INPUT
+top_A[14]		PIN_71		:INPUT
+top_A[15]		PIN_70		:INPUT
 
-top_D[0]		PIN_96		:INOUT
-top_D[1]		PIN_97		:INOUT
-top_D[2]		PIN_98		:INOUT
-top_D[3]		PIN_1		:INOUT
-top_D[4]		PIN_7		:INOUT
-top_D[5]		PIN_5		:INOUT
-top_D[6]		PIN_4		:INOUT
-top_D[7]		PIN_3		:INOUT
+top_D[0]		PIN_1		:INOUT
+top_D[1]		PIN_2		:INOUT
+top_D[2]		PIN_3		:INOUT
+top_D[3]		PIN_4		:INOUT
+top_D[4]		PIN_5		:INOUT
+top_D[5]		PIN_7		:INOUT
+top_D[6]		PIN_92		:INOUT
+top_D[7]		PIN_93		:INOUT
 
-top_nRST		PIN_2		:INOUT
+top_nRST		PIN_68		:INOUT
 
 ####################
 # Camera Interface
 ####################
-top_SENS_SIN		PIN_15		:OUTPUT
-top_SENS_LOAD		PIN_16		:OUTPUT
+top_SENS_SIN		PIN_24		:OUTPUT
+top_SENS_LOAD		PIN_18		:OUTPUT
 top_SENS_XCK		PIN_17		:OUTPUT
-top_SENS_READ		PIN_18		:OUTPUT
+top_SENS_READ		PIN_16		:OUTPUT
 top_SENS_RESET		PIN_23		:OUTPUT
-top_SENS_START		PIN_24		:OUTPUT
-# SENS_VOUT connect to 25
+top_SENS_START		PIN_25		:OUTPUT
+# SENS_VOUT connect to pin 15, adc_in 10
 
 #################
 # ROM CONTROL
 #################
-top_ROM_nCS         PIN_60		:OUTPUT
-top_ROM_A[22]		PIN_70		:OUTPUT
-top_ROM_A[21]		PIN_71		:OUTPUT
+top_ROM_nCS         PIN_30		:OUTPUT
+top_ROM_A[22]		PIN_63		:OUTPUT
+top_ROM_A[21]		PIN_64		:OUTPUT
 top_ROM_A[20]		PIN_77		:OUTPUT
-top_ROM_A[19]		PIN_69		:OUTPUT
-top_ROM_A[18]		PIN_68		:OUTPUT
-top_ROM_A[17]		PIN_78		:OUTPUT
-top_ROM_A[16]		PIN_79		:OUTPUT
-top_ROM_A[15]		PIN_85		:OUTPUT
-top_ROM_A[14]		PIN_86		:OUTPUT
+top_ROM_A[19]		PIN_62		:OUTPUT
+top_ROM_A[18]		PIN_61		:OUTPUT
+top_ROM_A[17]		PIN_69		:OUTPUT
+top_ROM_A[16]		PIN_67		:OUTPUT
+top_ROM_A[15]		PIN_66		:OUTPUT
+top_ROM_A[14]		PIN_65		:OUTPUT
 
 ##################
 # RAM CONTROL
 ##################
-top_RAM_nCS		    PIN_57		:OUTPUT
-top_RAM_nWE	        PIN_42		:OUTPUT
-top_RAM_nRD		    PIN_59		:OUTPUT
-top_RAM_A[0]		PIN_35		:OUTPUT
+top_RAM_nCS		    PIN_43		:OUTPUT
+top_RAM_nWE	        PIN_56		:OUTPUT
+top_RAM_nRD		    PIN_45		:OUTPUT
+
+top_RAM_A[0]		PIN_34		:OUTPUT
 top_RAM_A[1]		PIN_33		:OUTPUT
-top_RAM_A[2]		PIN_31		:OUTPUT
-top_RAM_A[3]		PIN_29		:OUTPUT
-top_RAM_A[4]		PIN_26		:OUTPUT
-top_RAM_A[5]		PIN_30		:OUTPUT
-top_RAM_A[6]		PIN_32		:OUTPUT
-top_RAM_A[7]		PIN_34		:OUTPUT
-top_RAM_A[8]		PIN_44		:OUTPUT
-top_RAM_A[9]		PIN_45		:OUTPUT
-top_RAM_A[10]		PIN_58		:OUTPUT
-top_RAM_A[11]		PIN_46		:OUTPUT
-top_RAM_A[12]		PIN_36		:OUTPUT
-top_RAM_A[13]		PIN_43		:OUTPUT
-top_RAM_A[14]		PIN_38		:OUTPUT
-top_RAM_A[15]		PIN_41		:OUTPUT
-top_RAM_A[16]		PIN_40		:OUTPUT
-top_RAM_DQ[0]		PIN_37		:INOUT
-top_RAM_DQ[1]		PIN_39		:INOUT
-top_RAM_DQ[2]		PIN_51		:INOUT
-top_RAM_DQ[3]		PIN_52		:INOUT
-top_RAM_DQ[4]		PIN_53		:INOUT
-top_RAM_DQ[5]		PIN_54		:INOUT
-top_RAM_DQ[6]		PIN_55		:INOUT
-top_RAM_DQ[7]		PIN_56		:INOUT
+top_RAM_A[2]		PIN_32		:OUTPUT
+top_RAM_A[3]		PIN_31		:OUTPUT
+top_RAM_A[4]		PIN_48		:OUTPUT
+top_RAM_A[5]		PIN_47		:OUTPUT
+top_RAM_A[6]		PIN_46		:OUTPUT
+top_RAM_A[7]		PIN_51		:OUTPUT
+top_RAM_A[8]		PIN_58		:OUTPUT
+top_RAM_A[9]		PIN_59		:OUTPUT
+top_RAM_A[10]		PIN_44		:OUTPUT
+top_RAM_A[11]		PIN_60		:OUTPUT
+top_RAM_A[12]		PIN_52		:OUTPUT
+top_RAM_A[13]		PIN_57		:OUTPUT
+top_RAM_A[14]		PIN_53		:OUTPUT
+top_RAM_A[15]		PIN_55		:OUTPUT
+top_RAM_A[16]		PIN_54		:OUTPUT
+
+top_RAM_DQ[0]		PIN_35		:INOUT
+top_RAM_DQ[1]		PIN_36		:INOUT
+top_RAM_DQ[2]		PIN_37		:INOUT
+top_RAM_DQ[3]		PIN_38		:INOUT
+top_RAM_DQ[4]		PIN_39		:INOUT
+top_RAM_DQ[5]		PIN_40		:INOUT
+top_RAM_DQ[6]		PIN_41		:INOUT
+top_RAM_DQ[7]		PIN_42		:INOUT
 
 ############
 # BOARD FEATURE
 ############
-top_nLED_REC		PIN_47		:OUTPUT
-top_nLED_RAMIO		PIN_48		:OUTPUT
-
-# SWDIO			72
-# GND			74
-# 3V3			75
-# SWCLK			76
-# GND			94
-# GND			99
-# 3V3			100
+top_nLED_REC		PIN_29		:OUTPUT
+top_nLED_RAMIO		PIN_26		:OUTPUT

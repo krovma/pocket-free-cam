@@ -29,7 +29,7 @@ reg [2:0] AdcEocEdge;
 alta_adc adc_inst(
   .enb      (!adc_en    ),
   .sclk     (adc_clock  ),
-  .insel    (5'b00011   ), // ADC_IN2  see docs--> 00011: in2
+  .insel    (5'b01011   ), // ADC_IN10  see docs--> 01011: in10
   .stop     (1'b0       ),
   .db       (adc_db     ),
   .eoc      (adc_eoc    )

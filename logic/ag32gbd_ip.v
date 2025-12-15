@@ -351,7 +351,7 @@ always @(posedge sys_clock or negedge resetn) begin
 end
 
 assign top_nLED_REC = ~Flag_CamCapture;
-assign top_nLED_RAMIO = 1'b1;
+assign top_nLED_RAMIO = ~top_isGbdWritingRam & ~isAccessingRam;
 
 //output assignments
 wire isReadingReg = Reg_OutputValid;
